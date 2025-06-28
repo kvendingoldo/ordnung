@@ -64,6 +64,9 @@ ignore = [
     "PLR0911", # too many return statements
     "PLR2004", # magic value used in comparison
     "PLR0904", # too many public methods
+    "PERF203",
+    "TRY003",
+    "TRY301"
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

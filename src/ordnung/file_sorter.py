@@ -8,7 +8,6 @@ and writes the sorted result back to the original file or a specified output fil
 
 import argparse
 import difflib
-import glob
 import json
 import logging
 import re
@@ -59,28 +58,27 @@ def detect_file_type(file_path: str) -> str:
             f"Cannot determine file type for {file_path}") from err
 
 
-def sort_dict_recursively(data: Any, sort_arrays_by_first_key: bool = False) -> Any:
+def sort_dict_recursively(data: Any, *, sort_arrays_by_first_key: bool = False) -> Any:
     if isinstance(data, dict):
-        return {k: sort_dict_recursively(v, sort_arrays_by_first_key) for k, v in sorted(data.items())}
+        return {k: sort_dict_recursively(v, sort_arrays_by_first_key=sort_arrays_by_first_key) for k, v in sorted(data.items())}
     if isinstance(data, list):
         if all(isinstance(item, (str, int, float, bool)) or item is None for item in data):
             # Sort arrays of primitives
             return sorted(data, key=lambda x: (x is None, str(x) if x is not None else ""))
-        else:
-            # For arrays of objects, optionally sort by the first key's value, then recursively sort each object
-            if sort_arrays_by_first_key and all(isinstance(item, dict) and item for item in data):
-                # Get the first key from each dict and sort by its value BEFORE sorting keys within objects
-                first_keys = [list(item.keys())[0] for item in data]
-                # Use the first key that appears in all items, or the first key of the first item
-                if first_keys and all(k == first_keys[0] for k in first_keys):
-                    sort_key = first_keys[0]
-                    # Sort the array by the first key's value
-                    sorted_array = sorted(data, key=lambda x: (
-                        x[sort_key] is None, str(x[sort_key]) if x[sort_key] is not None else ""))
-                    # Then recursively sort each object's keys
-                    return [sort_dict_recursively(item, sort_arrays_by_first_key) for item in sorted_array]
-            # If not sorting by first key or not all items are dicts with the same first key, just recursively sort each item
-            return [sort_dict_recursively(item, sort_arrays_by_first_key) for item in data]
+        # For arrays of objects, optionally sort by the first key's value, then recursively sort each object
+        if sort_arrays_by_first_key and all(isinstance(item, dict) and item for item in data):
+            # Get the first key from each dict and sort by its value BEFORE sorting keys within objects
+            first_keys = [next(iter(item.keys())) for item in data]
+            # Use the first key that appears in all items, or the first key of the first item
+            if first_keys and all(k == first_keys[0] for k in first_keys):
+                sort_key = first_keys[0]
+                # Sort the array by the first key's value
+                sorted_array = sorted(data, key=lambda x: (
+                    x[sort_key] is None, str(x[sort_key]) if x[sort_key] is not None else ""))
+                # Then recursively sort each object's keys
+                return [sort_dict_recursively(item, sort_arrays_by_first_key=sort_arrays_by_first_key) for item in sorted_array]
+        # If not sorting by first key or not all items are dicts with the same first key, just recursively sort each item
+        return [sort_dict_recursively(item, sort_arrays_by_first_key=sort_arrays_by_first_key) for item in data]
     return data
 
 
@@ -115,7 +113,7 @@ def file_is_formatted(input_file: str, file_type: str, json_indent: int, yaml_in
     Check if the file is already formatted (sorted and indented as specified).
     """
     data = load_file(input_file, file_type)
-    sorted_data = sort_dict_recursively(data)
+    sorted_data = sort_dict_recursively(data, sort_arrays_by_first_key=False)
     with Path(input_file).open(encoding="utf-8") as f:
         original_content = f.read().strip()
     # Render sorted data to string
@@ -136,7 +134,8 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
     logger.info("Detected file type: %s", file_type.upper())
     data = load_file(input_file, file_type)
     logger.info("Loaded data from: %s", input_file)
-    sorted_data = sort_dict_recursively(data, sort_arrays_by_first_key)
+    sorted_data = sort_dict_recursively(
+        data, sort_arrays_by_first_key=sort_arrays_by_first_key)
     logger.info("Data sorted successfully")
     if check:
         # Check mode: compare sorted output to file content
@@ -186,30 +185,40 @@ def find_files(
     for p in paths:
         path = Path(p)
         if pattern_mode:
-            for match in glob.glob(p, recursive=recursive):
-                match_path = Path(match)
-                if (match_path.is_file() and
-                    match_path.suffix.lower() in {".json", ".yaml", ".yml"} and
-                        (not regex_compiled or regex_compiled.search(str(match_path)))):
+            parent = path.parent if path.parent != Path() else Path()
+            pattern = path.name
+            matches = parent.rglob(
+                pattern) if recursive else parent.glob(pattern)
+            for match_path in matches:
+                if (
+                    match_path.is_file()
+                    and match_path.suffix.lower() in {".json", ".yaml", ".yml"}
+                    and (not regex_compiled or regex_compiled.search(str(match_path)))
+                ):
                     found.add(match_path.resolve())
         elif path.is_file():
-            if (path.suffix.lower() in {".json", ".yaml", ".yml"} and
-                    (not regex_compiled or regex_compiled.search(str(path)))):
+            if (
+                path.suffix.lower() in {".json", ".yaml", ".yml"}
+                and (not regex_compiled or regex_compiled.search(str(path)))
+            ):
                 found.add(path.resolve())
         elif path.is_dir():
             for ext in ("*.json", "*.yaml", "*.yml"):
                 files = path.rglob(ext) if recursive else path.glob(ext)
                 for f in files:
-                    if (f.is_file() and
-                            (not regex_compiled or regex_compiled.search(str(f)))):
+                    if f.is_file() and (not regex_compiled or regex_compiled.search(str(f))):
                         found.add(f.resolve())
         else:
-            # Try glob pattern
-            for match in glob.glob(p, recursive=recursive):
-                match_path = Path(match)
-                if (match_path.is_file() and
-                    match_path.suffix.lower() in {".json", ".yaml", ".yml"} and
-                        (not regex_compiled or regex_compiled.search(str(match_path)))):
+            parent = path.parent if path.parent != Path() else Path()
+            pattern = path.name
+            matches = parent.rglob(
+                pattern) if recursive else parent.glob(pattern)
+            for match_path in matches:
+                if (
+                    match_path.is_file()
+                    and match_path.suffix.lower() in {".json", ".yaml", ".yml"}
+                    and (not regex_compiled or regex_compiled.search(str(match_path)))
+                ):
                     found.add(match_path.resolve())
     return sorted(found)
 
