@@ -76,7 +76,7 @@ jobs:
 
       - name: Set application version
         id: set_version
-        uses: kvendingoldo/git-flow-action@v2.0.2
+        uses: kvendingoldo/git-flow-action@v2.2.0
         with:
           enable_github_release: true
           auto_release_branches: ""
