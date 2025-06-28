@@ -16,6 +16,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 import yaml
+import re
 
 from ordnung.file_sorter import (
     FileLoadError,
@@ -50,6 +51,17 @@ def compare_yaml_files(f1, f2):
     with f1_path.open() as a, f2_path.open() as b:
         return yaml.safe_load(a) == yaml.safe_load(b)
 
+
+def normalize_yaml_output(s):
+    # Remove trailing newlines and document end markers
+    return re.sub(r'(\n|\s)*\.\.\.(\n|\s)*$', '', s.strip())
+
+
+def normalize_json_output(s):
+    # Remove trailing newlines
+    return s.strip()
+
+
 # File-based tests using input/expected pairs
 
 
@@ -72,11 +84,42 @@ def test_file_sorter_file_based(input_file, expected_file, compare_fn):
         input_path = data_dir / input_file
         expected_path = data_dir / expected_file
         temp_file = Path(temp_dir) / input_file
+        temp_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(input_path, temp_file)
         sort_file(str(temp_file))
         assert compare_fn(temp_file, expected_path)
     finally:
         shutil.rmtree(temp_dir)
+
+
+def test_file_sorter_terrible_yaml(tmp_path):
+    """Test sorting of the terrible.yaml file in tests/data/"""
+    input_path = data_dir / "terrible.yaml"
+    temp_file = tmp_path / "terrible.yaml"
+    shutil.copy(input_path, temp_file)
+    # Just check that it sorts and does not raise, and output is valid YAML
+    sort_file(str(temp_file))
+    with temp_file.open() as f:
+        loaded = yaml.safe_load(f)
+    assert isinstance(loaded, dict)
+    # Optionally: check for some expected keys
+    assert "norway_values" in loaded
+    assert "arrays" in loaded
+
+
+@pytest.mark.parametrize("input_file,expected_file,compare_fn", [
+    ("yaml_input_null_key.yaml", "yaml_expected_null_key.yaml", compare_yaml_files),
+])
+def test_yaml_null_key_case(input_file, expected_file, compare_fn):
+    input_path = data_dir / input_file
+    expected_path = data_dir / expected_file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".yaml")
+    temp_file.close()
+    shutil.copy(input_path, temp_file.name)
+    sort_file(temp_file.name)
+    assert compare_fn(temp_file.name, expected_path)
+    Path(temp_file.name).unlink()
+
 
 # Integration tests for batch processing
 
@@ -444,20 +487,34 @@ def test_sort_dict_recursively_array_of_objects():
     assert result5 == expected5
 
 
-def test_load_file_json():
-    """Test loading JSON file."""
-    json_content = '{"c": 3, "a": 1, "b": 2}'
-    with patch("pathlib.Path.open", mock_open(read_data=json_content)):
-        result = load_file("test.json", "json")
-        assert result == {"c": 3, "a": 1, "b": 2}
+def test_load_file_json_valid(tmp_path):
+    """Test loading valid JSON file using a real file."""
+    file = tmp_path / "test.json"
+    file.write_text('{"c": 3, "a": 1, "b": 2}')
+    result = load_file(str(file), "json")
+    assert result == {"c": 3, "a": 1, "b": 2}
 
 
-def test_load_file_yaml():
-    """Test loading YAML file."""
-    yaml_content = "c: 3\na: 1\nb: 2"
-    with patch("pathlib.Path.open", mock_open(read_data=yaml_content)):
-        result = load_file("test.yaml", "yaml")
-        assert result == {"c": 3, "a": 1, "b": 2}
+def test_load_file_json_empty():
+    """Test loading empty JSON file raises FileLoadError."""
+    with patch("pathlib.Path.open", mock_open(read_data="")):
+        with pytest.raises(FileLoadError):
+            load_file("test.json", "json")
+
+
+def test_load_file_yaml_valid(tmp_path):
+    """Test loading valid YAML file using a real file."""
+    file = tmp_path / "test.yaml"
+    file.write_text("c: 3\na: 1\nb: 2")
+    result = load_file(str(file), "yaml")
+    assert result == {"c": 3, "a": 1, "b": 2}
+
+
+def test_load_file_yaml_empty():
+    """Test loading empty YAML file raises FileLoadError."""
+    with patch("pathlib.Path.open", mock_open(read_data="")):
+        with pytest.raises(FileLoadError):
+            load_file("test.yaml", "yaml")
 
 
 def test_save_file_json():
@@ -830,6 +887,271 @@ def test_check_mode_invalid_yaml(tmp_path):
     file.write_text("a: 1\nb: [2, 3\nc: 4")
     with pytest.raises(FileLoadError):
         sort_file(str(file), check=True)
+
+
+def test_empty_json_file_whitespace_only(tmp_path):
+    """Test JSON file with only whitespace."""
+    file = tmp_path / "whitespace.json"
+    file.write_text("   \n\t  \n")
+    with pytest.raises(FileLoadError):
+        sort_file(str(file))
+
+
+def test_empty_yaml_file(tmp_path):
+    """Test completely empty YAML file."""
+    file = tmp_path / "empty.yaml"
+    file.write_text("")
+    with pytest.raises(FileLoadError):
+        sort_file(str(file))
+
+
+def test_empty_yaml_file_whitespace_only(tmp_path):
+    """Test YAML file with only whitespace."""
+    file = tmp_path / "whitespace.yaml"
+    file.write_text("   \n\t  \n")
+    with pytest.raises(FileLoadError):
+        sort_file(str(file))
+
+
+def test_empty_json_object(tmp_path):
+    """Test JSON file with empty object {}."""
+    file = tmp_path / "empty_obj.json"
+    file.write_text("{}")
+
+    # Should work fine - empty object is valid
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that it's still an empty object
+    with file.open() as f:
+        content = f.read()
+    # Accept both '{}' and '{\n}\n' and normalized output
+    assert normalize_json_output(content) == "{}"
+
+
+def test_empty_json_array(tmp_path):
+    """Test JSON file with empty array []."""
+    file = tmp_path / "empty_arr.json"
+    file.write_text("[]")
+
+    # Should work fine - empty array is valid
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that it's still an empty array
+    with file.open() as f:
+        content = f.read()
+    assert normalize_json_output(content) == "[]"
+
+
+def test_empty_yaml_document(tmp_path):
+    """Test YAML file with empty document (just newlines)."""
+    file = tmp_path / "empty_doc.yaml"
+    file.write_text("---\n...")
+
+    # Should work fine - empty YAML document is valid
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that it's still empty (empty YAML document becomes just ...)
+    with file.open() as f:
+        content = f.read()
+    # Empty YAML document with --- and ... becomes just ..., which normalizes to empty string
+    assert normalize_yaml_output(content) == ""
+
+
+def test_empty_json_check_mode(tmp_path):
+    """Test check mode with empty JSON file."""
+    file = tmp_path / "empty_check.json"
+    file.write_text("")
+    with pytest.raises(FileLoadError):
+        sort_file(str(file), check=True)
+
+
+def test_empty_yaml_check_mode(tmp_path):
+    """Test check mode with empty YAML file."""
+    file = tmp_path / "empty_check.yaml"
+    file.write_text("")
+    with pytest.raises(FileLoadError):
+        sort_file(str(file), check=True)
+
+
+def test_empty_json_object_check_mode(tmp_path):
+    """Test check mode with empty JSON object."""
+    file = tmp_path / "empty_obj_check.json"
+    file.write_text("{}")
+
+    # Should pass check mode
+    result = sort_file(str(file), check=True)
+    assert result is True
+
+
+def test_empty_yaml_document_check_mode(tmp_path):
+    """Test check mode with empty YAML document."""
+    file = tmp_path / "empty_doc_check.yaml"
+    file.write_text("---\n...")
+
+    # Should not be formatted (quotes will be added)
+    result = sort_file(str(file), check=True)
+    assert result is False
+
+
+def test_empty_files_with_different_extensions(tmp_path):
+    """Test empty files with different extensions."""
+    # Test .yml extension
+    yml_file = tmp_path / "empty.yml"
+    yml_file.write_text("")
+    with pytest.raises(FileLoadError):
+        sort_file(str(yml_file))
+
+    # Test .json extension
+    json_file = tmp_path / "empty.json"
+    json_file.write_text("")
+    with pytest.raises(FileLoadError):
+        sort_file(str(json_file))
+
+
+def test_yaml_with_braces_content(tmp_path):
+    """Test YAML file with {} content (should be treated as string, not object)."""
+    file = tmp_path / "braces.yaml"
+    file.write_text("content: '{}'")
+
+    # Should work fine - {} is a string, not an object
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that the content is preserved as a string
+    with file.open() as f:
+        content = f.read()
+    assert "content: '{}'" in content
+
+
+def test_yaml_with_document_separator(tmp_path):
+    """Test YAML file with --- document separator (should raise error for multi-document YAML)."""
+    file = tmp_path / "document.yaml"
+    file.write_text("---\nkey: value\n---\nanother: data")
+
+    # Should raise FileLoadError for multi-document YAML
+    with pytest.raises(FileLoadError):
+        sort_file(str(file))
+
+
+def test_yaml_norway_problem_off_no_n(tmp_path):
+    """Test YAML Norway problem: off, no, n should remain as strings, not become false."""
+    file = tmp_path / "norway.yaml"
+    file.write_text("""off_value: off
+no_value: no
+n_value: n
+on_value: on
+yes_value: yes
+y_value: y
+mixed: [off, no, n, on, yes, y]""")
+
+    # Should work fine - these should remain as strings
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that the values are preserved as strings, not converted to booleans
+    with file.open() as f:
+        content = f.read()
+    # These should be quoted strings, not boolean values
+    assert "off_value: 'off'" in content
+    assert "no_value: 'no'" in content
+    assert "n_value: 'n'" in content
+    assert "on_value: 'on'" in content
+    assert "yes_value: 'yes'" in content
+    assert "y_value: 'y'" in content
+
+
+def test_yaml_norway_problem_check_mode(tmp_path):
+    """Test YAML Norway problem in check mode."""
+    file = tmp_path / "norway_check.yaml"
+    file.write_text("""off_value: off
+no_value: no
+n_value: n
+on_value: on
+yes_value: yes
+y_value: y""")
+
+    # Should not be formatted (quotes will be added)
+    result = sort_file(str(file), check=True)
+    assert result is False
+
+
+def test_yaml_with_braces_and_document_separator(tmp_path):
+    """Test YAML file with both {} content and document separators (should raise error for multi-document YAML)."""
+    file = tmp_path / "complex.yaml"
+    file.write_text("""---
+first: '{}'
+second: value
+---
+third: '{}'
+fourth: data""")
+
+    # Should raise FileLoadError for multi-document YAML
+    with pytest.raises(FileLoadError):
+        sort_file(str(file))
+
+
+def test_yaml_boolean_literals_vs_strings(tmp_path):
+    """Test YAML with actual boolean literals vs string representations."""
+    file = tmp_path / "booleans.yaml"
+    file.write_text("""# String representations (should remain strings)
+string_off: 'off'
+string_no: 'no'
+string_n: 'n'
+string_on: 'on'
+string_yes: 'yes'
+string_y: 'y'
+
+# Actual boolean literals (should remain booleans)
+bool_true: true
+bool_false: false
+bool_yes: true
+bool_no: false""")
+
+    # Should work fine
+    result = sort_file(str(file))
+    assert result is True
+
+    # Check that string representations remain quoted
+    with file.open() as f:
+        content = f.read()
+    assert "string_off: 'off'" in content
+    assert "string_no: 'no'" in content
+    assert "string_n: 'n'" in content
+    assert "string_on: 'on'" in content
+    assert "string_yes: 'yes'" in content
+    assert "string_y: 'y'" in content
+
+
+def test_yaml_omit_null_keys(tmp_path):
+    """Test that keys with null/None values are written as empty values in YAML output."""
+    input_path = data_dir / "yaml_input_null_key.yaml"
+    expected_path = data_dir / "yaml_expected_null_key.yaml"
+    temp_file = tmp_path / "yaml_input_null_key.yaml"
+    shutil.copy(input_path, temp_file)
+    sort_file(str(temp_file))
+    with temp_file.open() as f:
+        loaded = yaml.safe_load(f)
+    # Check that the keys with null values are present but with None values
+    assert "server_config" in loaded
+    assert loaded["server_config"] is None
+    assert "server_config2" in loaded
+    assert loaded["server_config2"] is None
+    # Output matches expected (empty values instead of explicit null)
+    with expected_path.open() as f:
+        expected_content = f.read()
+    with temp_file.open() as f:
+        actual_content = f.read()
+    # Check that the YAML contains empty values (no explicit null)
+    assert "server_config:" in actual_content
+    assert "server_config2:" in actual_content
+    # Check that there's no explicit ": null" text (but allow "null" in key names)
+    assert ": null" not in actual_content
+    # Check that the keys end with colon and newline (empty values)
+    assert "server_config:\n" in actual_content
+    assert "server_config2:\n" in actual_content
 
 
 if __name__ == "__main__":

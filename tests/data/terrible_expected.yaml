@@ -1,0 +1,83 @@
+# A terrible YAML file with all sorts of edge cases
+# Mixed key types, anchors, aliases, complex nested structures
+
+# Anchors and aliases
+anchor1: &anchor1
+  name: "First Anchor"
+  value: 42
+
+anchor2: &anchor2
+  name: "Second Anchor"
+  value: 100
+
+# Arrays with mixed content
+arrays:
+  mixed: [true, "hello", 42, null]
+  objects:
+    - active: false
+      age: 25
+      name: "Bob"
+    - active: true
+      age: 30
+      name: "Alice"
+    - active: true
+      age: 35
+      name: "Charlie"
+  simple: [3, 1, 4, 1, 5]
+
+# Empty structures
+empty:
+  dict: {}
+  list: []
+  string: ""
+
+# Complex nested structure
+nested:
+  deep:
+    deeper:
+      deepest:
+        mixed: [true, "string", 42, null, false]
+        numbers: [3, 1, 4, 1, 5, 9, 2, 6]
+        value: "very deep"
+
+# Mixed key types (strings, numbers, booleans)
+mixed_keys:
+  123: "numeric key"
+  "quoted_key": "quoted value"
+  "string_key": "string value"
+  false: "another boolean"
+  null: "null key"
+  true: "boolean key"
+
+# Norway problem values
+norway_values:
+  false: false
+  n: false
+  no: false
+  off: false
+  on: true
+  true: true
+  y: true
+  yes: true
+
+# References to anchors
+references:
+  first: *anchor1
+  inline: &inline_anchor
+    name: "Inline Anchor"
+    value: 999
+  second: *anchor2
+
+# More inline references
+inline_refs:
+  ref1: *inline_anchor
+  ref2: *anchor1
+
+# Special characters and edge cases
+special:
+  "key#with#hashes": "value#with#hashes"
+  "key:with:colons": "value:with:colons"
+  "key-with-dashes": "value-with-dashes"
+  "key.with.dots": "value.with.dots"
+  "key with spaces": "value with spaces"
+  "key_with_underscores": "value_with_underscores"

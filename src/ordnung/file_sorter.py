@@ -17,6 +17,81 @@ from typing import Any, List, Optional
 
 import yaml
 
+# Configure YAML to handle Norway problem correctly
+
+
+class NorwaySafeLoader(yaml.SafeLoader):
+    """Custom SafeLoader that treats off/no/n/on/yes/y as strings to avoid Norway problem."""
+
+    def construct_yaml_bool(self, node):
+        """Override boolean construction to handle Norway problem."""
+        value = self.construct_scalar(node)
+        if value in ['off', 'no', 'n', 'on', 'yes', 'y']:
+            # These should be treated as strings, not booleans
+            return value
+        # For actual boolean values, use the standard behavior
+        if value in ['true', 'false']:
+            return value == 'true'
+        return value
+
+    def construct_undefined(self, node):
+        """Handle undefined tags by treating them as strings."""
+        return self.construct_scalar(node)
+
+    def fetch_alias(self):
+        """Override to handle glob patterns that start with *."""
+        # Check if the next token looks like a glob pattern
+        if self.peek() == '*':
+            # Look ahead to see if it's followed by a dot (like *.html)
+            if self.peek(1) == '.':
+                # This is likely a glob pattern, not an alias
+                # Skip the alias parsing and treat as a regular scalar
+                return self.fetch_plain()
+        return super().fetch_alias()
+
+    def construct_yaml_timestamp(self, node):
+        """Override timestamp construction to handle port mappings like 22:22 as strings."""
+        value = self.construct_scalar(node)
+        # If it looks like a port mapping (number:number), treat as string
+        if ':' in value and len(value.split(':')) == 2:
+            parts = value.split(':')
+            if parts[0].isdigit() and parts[1].isdigit():
+                # This looks like a port mapping, keep as string
+                return value
+        # For actual timestamps, use standard behavior
+        return super().construct_yaml_timestamp(node)
+
+
+# Remove the implicit resolver for timestamps from NorwaySafeLoader for all keys, including None
+for ch in list(NorwaySafeLoader.yaml_implicit_resolvers):
+    resolvers = NorwaySafeLoader.yaml_implicit_resolvers[ch]
+    NorwaySafeLoader.yaml_implicit_resolvers[ch] = [
+        (tag, regexp) for tag, regexp in resolvers if tag != 'tag:yaml.org,2002:timestamp'
+    ]
+# Also remove for None key
+if None in NorwaySafeLoader.yaml_implicit_resolvers:
+    resolvers = NorwaySafeLoader.yaml_implicit_resolvers[None]
+    NorwaySafeLoader.yaml_implicit_resolvers[None] = [
+        (tag, regexp) for tag, regexp in resolvers if tag != 'tag:yaml.org,2002:timestamp'
+    ]
+
+
+class NorwaySafeDumper(yaml.SafeDumper):
+    def represent_str(self, data):
+        if data in {"off", "no", "n", "on", "yes", "y"}:
+            return self.represent_scalar('tag:yaml.org,2002:str', data, style="'")
+        return super().represent_str(data)
+
+    def represent_none(self, _):
+        """Represent None as empty value instead of explicit null."""
+        return self.represent_scalar('tag:yaml.org,2002:null', '')
+
+
+# Register the custom string representer
+NorwaySafeDumper.add_representer(str, NorwaySafeDumper.represent_str)
+# Register the custom None representer
+NorwaySafeDumper.add_representer(type(None), NorwaySafeDumper.represent_none)
+
 # Set up logger
 logger = logging.getLogger("ordnung")
 
@@ -60,7 +135,7 @@ def detect_file_type(file_path: str) -> str:
 
 def sort_dict_recursively(data: Any, *, sort_arrays_by_first_key: bool = False) -> Any:
     if isinstance(data, dict):
-        return {k: sort_dict_recursively(v, sort_arrays_by_first_key=sort_arrays_by_first_key) for k, v in sorted(data.items())}
+        return {k: sort_dict_recursively(v, sort_arrays_by_first_key=sort_arrays_by_first_key) for k, v in sorted(data.items(), key=lambda x: str(x[0]))}
     if isinstance(data, list):
         if all(isinstance(item, (str, int, float, bool)) or item is None for item in data):
             # Sort arrays of primitives
@@ -83,12 +158,38 @@ def sort_dict_recursively(data: Any, *, sort_arrays_by_first_key: bool = False) 
 
 
 def load_file(file_path: str, file_type: str) -> Any:
+    def quote_port_and_specials(yaml_text: str) -> str:
+        # Only quote if not already quoted (not surrounded by single or double quotes)
+        # 1. Port mappings in sequences: - 22:22
+        yaml_text = re.sub(r"^([ \t]*-[ \t]*)(?!['\"])(\d{1,5}:\d{1,5})(?!['\"])([ \t]*)(#.*)?$",
+                           lambda m: f"{m.group(1)}'{m.group(2)}'{m.group(3) or ''}{m.group(4) or ''}",
+                           yaml_text, flags=re.MULTILINE)
+        # 2. !something in sequences: - !.git
+        yaml_text = re.sub(r"^([ \t]*-[ \t]*)(?!['\"])(!\S+)(?!['\"])([ \t]*)(#.*)?$",
+                           lambda m: f"{m.group(1)}'{m.group(2)}'{m.group(3) or ''}{m.group(4) or ''}",
+                           yaml_text, flags=re.MULTILINE)
+        # 3. Norway-problem values in sequences: - off, - no, - n, - on, - yes, - y
+        np_words = r'(off|no|n|on|yes|y)'
+        yaml_text = re.sub(rf"^([ \t]*-[ \t]*)(?<!['\"])(?P<val>{np_words})(?!['\"])([ \t]*)(#.*)?$",
+                           lambda m: f"{m.group(1)}'{m.group('val')}'{m.group(4) or ''}{m.group(5) or ''}",
+                           yaml_text, flags=re.MULTILINE)
+        # 4. Norway-problem values in mappings: key: off
+        yaml_text = re.sub(rf"^([ \t]*[\w\-]+:[ \t]*)(?<!['\"])(?P<val>{np_words})(?!['\"])([ \t]*)(#.*)?$",
+                           lambda m: f"{m.group(1)}'{m.group('val')}'{m.group(4) or ''}{m.group(5) or ''}",
+                           yaml_text, flags=re.MULTILINE)
+        return yaml_text
     try:
         with Path(file_path).open(encoding="utf-8") as f:
+            content = f.read()
+            if not content.strip():
+                raise FileLoadError(f"File is empty: {file_path}")
+            f.seek(0)
             if file_type == "json":
                 return json.load(f)
             if file_type == "yaml":
-                return yaml.safe_load(f)
+                # Preprocess to quote unquoted port mappings, !something, and Norway-problem values
+                content = quote_port_and_specials(content)
+                return yaml.load(content, Loader=NorwaySafeLoader)
     except Exception as err:
         raise FileLoadError(
             f"Error loading {file_type.upper()} file: {err}") from err
@@ -102,29 +203,10 @@ def save_file(data: Any, file_path: str, file_type: str, json_indent: int = 2, y
                           ensure_ascii=False, sort_keys=True)
             elif file_type == "yaml":
                 yaml.dump(data, f, default_flow_style=False,
-                          allow_unicode=True, sort_keys=True, indent=yaml_indent)
+                          allow_unicode=True, sort_keys=True, indent=yaml_indent, Dumper=NorwaySafeDumper)
     except Exception as err:
         raise FileSaveError(
             f"Error saving {file_type.upper()} file: {err}") from err
-
-
-def file_is_formatted(input_file: str, file_type: str, json_indent: int, yaml_indent: int) -> bool:
-    """
-    Check if the file is already formatted (sorted and indented as specified).
-    """
-    data = load_file(input_file, file_type)
-    sorted_data = sort_dict_recursively(data, sort_arrays_by_first_key=False)
-    with Path(input_file).open(encoding="utf-8") as f:
-        original_content = f.read().strip()
-    # Render sorted data to string
-    if file_type == "json":
-        formatted = json.dumps(
-            sorted_data, indent=json_indent, ensure_ascii=False, sort_keys=True)
-    else:
-        formatted = yaml.dump(sorted_data, default_flow_style=False,
-                              allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
-    # Normalize whitespace for YAML
-    return original_content == formatted
 
 
 def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent: int = 2, yaml_indent: int = 2, check: bool = False, sort_arrays_by_first_key: bool = False) -> bool:
