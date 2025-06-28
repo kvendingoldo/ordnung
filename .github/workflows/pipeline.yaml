@@ -1,0 +1,95 @@
+name: "CI/CD pipeline"
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - main
+
+env:
+  image_name: ordnung
+
+jobs:
+  unit-tests:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff
+
+      - name: Run unit tests with coverage
+        run: |
+          PYTHONPATH=src pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+
+      - name: Run linting
+        run: |
+          ruff check src/ tests/
+
+      - name: Upload unit test coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+          flags: unit-tests
+          name: codecov-umbrella
+
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    needs: [unit-tests]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Set application version
+        id: set_version
+        uses: kvendingoldo/git-flow-action@v2.0.2
+        with:
+          enable_github_release: true
+          auto_release_branches: ""
+          tag_prefix_release: "v"
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Build docker image and push it
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            kvendingoldo/${{ env.image_name }}:latest
+            kvendingoldo/${{ env.image_name }}:${{ steps.set_version.outputs.safe_version }}

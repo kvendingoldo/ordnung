@@ -1,0 +1,46 @@
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "80...100"
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 5%
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+ignore:
+  - "tests/"
+  - "**/__init__.py"
+  - "setup.py"
+  - "*.pyc"
+  - "*.pyo"
+  - "*.pyd"
+  - ".git/*"
+  - "*.so"
+  - "*.egg"
+  - "*.egg-info"
+  - "dist/*"
+  - "build/*"
+  - "*.egg-info/*"

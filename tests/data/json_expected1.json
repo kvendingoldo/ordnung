@@ -1,0 +1,34 @@
+{
+  "apple": "red fruit",
+  "banana": "yellow fruit",
+  "colors": ["blue", "green", "red", "yellow"],
+  "metadata": {
+    "author": "John Doe",
+    "created": "2023-01-01",
+    "version": "1.0.0"
+  },
+  "numbers": [1, 2, 3, 4, 5],
+  "settings": {
+    "language": "en",
+    "notifications": true,
+    "theme": "dark"
+  },
+  "users": [
+    {
+      "age": 30,
+      "city": "Boston",
+      "name": "Charlie"
+    },
+    {
+      "age": 25,
+      "city": "New York",
+      "name": "Alice"
+    },
+    {
+      "age": 35,
+      "city": "Chicago",
+      "name": "Bob"
+    }
+  ],
+  "zebra": "striped animal"
+}

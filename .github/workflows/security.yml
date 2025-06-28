@@ -1,0 +1,47 @@
+name: Security
+
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Every Monday at 2 AM
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install safety bandit
+
+      - name: Run safety check
+        run: |
+          safety check --json --output safety-report.json || true
+          safety check --full-report
+
+      - name: Run bandit security scan
+        run: |
+          bandit -r src/ -f json -o bandit-report.json || true
+          bandit -r src/ -f txt
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            bandit-report.json
