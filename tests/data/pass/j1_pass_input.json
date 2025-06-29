@@ -1,5 +1,12 @@
 {
   "string_numbers": ["3", "1", "4", "1", "5", "9", "2", "6"],
   "mixed": ["zebra", "3", "apple", "1", "banana", "2"],
-  "floats_as_strings": ["3.14", "2.71", "1.41", "2.23"]
+  "floats_as_strings": ["3.14", "2.71", "1.41", "2.23"],
+  "array_sort": {
+    "strings": ["c", "a", "b"],
+    "numbers": [3, 1, 2],
+    "booleans": [false, true, false],
+    "nulls": [null, null, null],
+    "mixed": ["string", 42, true, null]
+  }
 }

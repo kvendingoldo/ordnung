@@ -1,15 +1,29 @@
 config:
+  boolean_literals:
+    false_val: false
+    no_val: "no"
+    off_val: "off"
+    on_val: "on"
+    true_val: true
+    yes_val: "yes"
   boolean_values:
-    disabled: 'off'
-    enabled: 'on'
+    disabled: "off"
+    enabled: "on"
     false_value: false
-    no_value: 'no'
+    no_value: "no"
     true_value: true
-    yes_value: 'yes'
+    yes_value: "yes"
   port_mappings:
-  - '22:22'
-  - 443:8443
-  - 80:8080
+    - "22:22"
+    - 443:8443
+    - 80:8080
   special_tags:
-    docker_ignore: ''
-    git_ignore: ''
+    docker_ignore: ""
+    git_ignore: ""
+  string_values:
+    false_str: "false"
+    no_str: "no"
+    off_str: "off"
+    on_str: "on"
+    true_str: "true"
+    yes_str: "yes"

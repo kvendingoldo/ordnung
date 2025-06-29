@@ -1,3 +1,11 @@
 a: 1
 b: 2
 c: 3
+simple_sort:
+  c: 3
+  a: 1
+  b: 2
+string_sort:
+  c: cat
+  a: apple
+  b: banana

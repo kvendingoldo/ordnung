@@ -1,3 +1,7 @@
-a: apple
-b: banana
-c: cat
+list:
+- 1
+- 2
+- 3
+outer:
+  a: 1
+  z: 2

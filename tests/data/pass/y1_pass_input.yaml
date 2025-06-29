@@ -8,3 +8,9 @@ data:
   values:
     - "value1"
     - "value2"
+config_patterns:
+  patterns:
+    - "*.{html,css,js}"
+    - "*.{py,pyc}"
+  paths:
+    - "/path/to/{file1,file2}"

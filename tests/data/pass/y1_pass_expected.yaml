@@ -1,10 +1,16 @@
 config:
   paths:
-  - /path/to/{file1,file2}
+    - /path/to/{file1,file2}
   patterns:
-  - '*.{html,css,js}'
-  - '*.{py,pyc}'
+    - "*.{html,css,js}"
+    - "*.{py,pyc}"
 data:
   values:
-  - value1
-  - value2
+    - value1
+    - value2
+config_patterns:
+  paths:
+    - /path/to/{file1,file2}
+  patterns:
+    - "*.{html,css,js}"
+    - "*.{py,pyc}"

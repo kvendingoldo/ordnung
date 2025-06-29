@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from .conftest import compare_json_files, compare_yaml_files
 
 from ordnung.file_sorter import (
     FileLoadError,
@@ -24,18 +25,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 data_dir = Path(__file__).parent / "data" / "pass"
 fail_dir = Path(__file__).parent / "data" / "fail"
-
-
-def compare_json_files(f1, f2):
-    """Compare two JSON files by content."""
-    with Path(f1).open() as a, Path(f2).open() as b:
-        return json.load(a) == json.load(b)
-
-
-def compare_yaml_files(f1, f2):
-    """Compare two YAML files by loading them as objects."""
-    with Path(f1).open() as a, Path(f2).open() as b:
-        return yaml.safe_load(a) == yaml.safe_load(b)
 
 
 def create_pass_test(input_file, expected_file, ext):

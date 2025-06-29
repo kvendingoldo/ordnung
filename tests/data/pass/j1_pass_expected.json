@@ -1,26 +1,12 @@
 {
-  "floats_as_strings": [
-    "1.41",
-    "2.23",
-    "2.71",
-    "3.14"
-  ],
-  "mixed": [
-    "1",
-    "2",
-    "3",
-    "apple",
-    "banana",
-    "zebra"
-  ],
-  "string_numbers": [
-    "1",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "9"
-  ]
+  "floats_as_strings": ["1.41", "2.23", "2.71", "3.14"],
+  "mixed": ["1", "2", "3", "apple", "banana", "zebra"],
+  "string_numbers": ["1", "1", "2", "3", "4", "5", "6", "9"],
+  "array_sort": {
+    "booleans": [false, false, true],
+    "mixed": [42, true, "string", null],
+    "nulls": [null, null, null],
+    "numbers": [1, 2, 3],
+    "strings": ["a", "b", "c"]
+  }
 }

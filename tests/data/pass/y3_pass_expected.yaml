@@ -1,15 +1,58 @@
-config:
-  boolean_literals:
-    false_val: false
-    no_val: 'no'
-    off_val: 'off'
-    on_val: 'on'
-    true_val: true
-    yes_val: 'yes'
-  string_values:
-    false_str: 'false'
-    no_str: 'no'
-    off_str: 'off'
-    on_str: 'on'
-    true_str: 'true'
-    yes_str: 'yes'
+cities:
+  beijing: 北京
+  london: London
+  moscow: Москва
+  paris: Париж
+languages:
+  chinese:
+    goodbye: 再见
+    greeting: 你好世界
+    numbers:
+    - 一
+    - 三
+    - 二
+    - 五
+    - 四
+  english:
+    goodbye: Goodbye
+    greeting: Hello world
+    numbers:
+    - five
+    - four
+    - one
+    - three
+    - two
+  french:
+    goodbye: Au revoir
+    greeting: Bonjour le monde
+    numbers:
+    - cinq
+    - deux
+    - quatre
+    - trois
+    - un
+  russian:
+    goodbye: До свидания
+    greeting: Привет мир
+    numbers:
+    - два
+    - один
+    - пять
+    - три
+    - четыре
+mixed_content:
+  emoji:
+  - 🌟
+  - 🎉
+  - 🔥
+  - 🚀
+  special_chars:
+  - ß
+  - é
+  - ñ
+  - ü
+  unicode_strings:
+  - café
+  - naïve
+  - résumé
+  - über

@@ -1,28 +1,5 @@
 {
-  "booleans": [
-    false,
-    false,
-    true
-  ],
-  "mixed": [
-    42,
-    true,
-    "string",
-    null
-  ],
-  "nulls": [
-    null,
-    null,
-    null
-  ],
-  "numbers": [
-    1,
-    2,
-    3
-  ],
-  "strings": [
-    "a",
-    "b",
-    "c"
-  ]
+  "a": "apple",
+  "b": "banana",
+  "c": "cat"
 }

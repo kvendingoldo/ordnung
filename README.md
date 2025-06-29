@@ -11,7 +11,9 @@ A Python utility for sorting YAML and JSON files with support for batch processi
 - **Pattern matching**: Support for glob patterns and regex filtering
 - **Comprehensive error handling**: Graceful handling of invalid files and edge cases
 - **Unicode support**: Full support for international characters
-- **Extensive test coverage**: Comprehensive test suite with file-based comparisons
+- **Sort arrays by first key**: Optionally sort arrays of objects by the value of their first key
+- **Check mode**: Verify formatting without rewriting files (CI-friendly)
+- **Extensive test coverage**: Comprehensive test suite with file-based and dedicated scenario tests
 
 ## Installation
 
@@ -66,24 +68,27 @@ python -m ordnung.file_sorter './configs/*.yaml' --pattern
 
 Filter with regex:
 ```bash
-python -m ordnung.file_sorter ./mydir --regex '.*\\.ya?ml$'
-python -m ordnung.file_sorter ./data --regex '.*_config\\.json$'
+python -m ordnung.file_sorter ./mydir --regex '.*\.ya?ml$'
+python -m ordnung.file_sorter ./data --regex '.*_config\.json$'
 ```
 
 ### Command Line Options
 
 - `inputs`: Input file(s), directory(ies), or glob pattern(s) (required)
 - `-o, --output`: Output file (only for single file input)
-- `--indent`: Indentation for JSON files (default: 2)
+- `--json-indent`: Indentation for JSON files (default: 2)
+- `--yaml-indent`: Indentation for YAML files (default: 2)
 - `--recursive`: Recursively search directories
 - `--pattern`: Treat input as glob pattern(s)
 - `--regex`: Regex to further filter files
+- `--check`: Check if files are formatted (do not rewrite)
+- `--sort-arrays-by-first-key`: Sort arrays of objects by the value of the first key in each object
 
 ### Examples
 
 ```bash
 # Sort JSON file with 4-space indentation
-python -m ordnung.file_sorter data.json --indent 4
+python -m ordnung.file_sorter data.json --json-indent 4
 
 # Sort YAML file and save to new file
 python -m ordnung.file_sorter config.yaml -o sorted_config.yaml
@@ -98,7 +103,10 @@ python -m ordnung.file_sorter ./configs --recursive
 python -m ordnung.file_sorter './**/*.json' --pattern
 
 # Filter files with regex
-python -m ordnung.file_sorter ./data --regex '.*_prod\\.ya?ml$'
+python -m ordnung.file_sorter ./data --regex '.*_prod\.ya?ml$'
+
+# Check mode (CI): verify formatting without rewriting
+python -m ordnung.file_sorter ./data --check
 ```
 
 ## How It Works
@@ -114,6 +122,7 @@ The tool detects file types in this order:
 - **Dictionaries**: Keys are sorted alphabetically
 - **Lists**:
   - Primitive values (strings, numbers, booleans) are sorted
+  - Arrays of objects can be sorted by the value of their first key (optional)
   - Complex objects preserve order but sort their internal structure
 - **Nested structures**: Recursively sorted at all levels
 - **Mixed types**: Handles combinations of dictionaries, lists, and primitives
@@ -155,16 +164,19 @@ pytest
 # Run with coverage
 pytest --cov=src/ordnung
 
-# Run specific test categories
-pytest -m "not slow"
-pytest -m integration
+# Run dedicated scenario tests
+pytest tests/test_dedicated.py
+
+# Run file-based auto-generated tests
+pytest tests/test_file_sorter.py
 ```
 
 ### Test Structure
 
 The test suite includes:
-- **File-based tests**: 10+ tests using input/expected file pairs
-- **Integration tests**: End-to-end workflow testing
+- **File-based tests**: Auto-generated for each input/expected file pair in `tests/data/pass` and `tests/data/fail`
+- **Dedicated scenario tests**: In `tests/test_dedicated.py` for batch, check mode, regex, pattern, indentation, and more
+- **Shared helpers**: Common test helpers (e.g., `compare_json_files`, `compare_yaml_files`) are in `tests/conftest.py`
 - **Error handling**: Invalid files, missing files, edge cases
 - **Batch processing**: Directory and pattern matching tests
 
@@ -191,12 +203,13 @@ ordnung/
 │       └── file_sorter.py
 ├── tests/
 │   ├── __init__.py
-│   ├── test_file_sorter.py
+│   ├── conftest.py  # Shared test helpers
+│   ├── test_file_sorter.py  # Auto-generated file-based tests
+│   ├── test_dedicated.py    # Dedicated scenario tests
 │   └── data/
-│       ├── json_input*.json
-│       ├── json_expected*.json
-│       ├── yaml_input*.yaml
-│       └── yaml_expected*.yaml
+│       ├── pass/
+│       ├── fail/
+│       └── ...
 ├── requirements.txt
 ├── pyproject.toml
 ├── pytest.ini
@@ -223,14 +236,17 @@ mypy src/
 2. Create expected output file (e.g., `json_expected6.json`)
 3. Add test case to `test_file_sorter_file_based` parametrize decorator
 
-## Error Handling
+## Contributing
 
-The tool handles various error conditions:
-- **File not found**: Clear error message with file path
-- **Invalid JSON/YAML**: Detailed parsing error messages
-- **Permission errors**: File access and write permission issues
-- **Unsupported file types**: Graceful handling of unknown formats
-- **Empty files**: Proper error handling for empty content
+Contributions are welcome! Please:
+- Follow the code style and naming conventions
+- Add or update tests for new features or bugfixes
+- Use the shared helpers in `tests/conftest.py` for consistency
+- Run `pytest` and ensure all tests pass before submitting a PR
+
+---
+
+For questions or issues, open an issue or pull request on GitHub.
 
 ## Dependencies
 

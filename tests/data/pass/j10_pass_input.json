@@ -1,34 +1,14 @@
 {
-  "zebra": "striped animal",
-  "apple": "red fruit",
-  "banana": "yellow fruit",
-  "settings": {
-    "theme": "dark",
-    "language": "en",
-    "notifications": true
+  "zebra": {
+    "beta": "value2",
+    "alpha": "value1"
   },
-  "users": [
-    {
-      "name": "Charlie",
-      "age": 30,
-      "city": "Boston"
-    },
-    {
-      "name": "Alice",
-      "age": 25,
-      "city": "New York"
-    },
-    {
-      "name": "Bob",
-      "age": 35,
-      "city": "Chicago"
-    }
-  ],
-  "metadata": {
-    "version": "1.0.0",
-    "author": "John Doe",
-    "created": "2023-01-01"
+  "apple": {
+    "delta": "value4",
+    "charlie": "value3"
   },
-  "numbers": [3, 1, 2, 5, 4],
-  "colors": ["blue", "red", "green", "yellow"]
+  "banana": {
+    "foxtrot": "value6",
+    "echo": "value5"
+  }
 }

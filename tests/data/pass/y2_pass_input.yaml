@@ -13,3 +13,17 @@ config:
   special_tags:
     git_ignore: !.git
     docker_ignore: !.dockerignore
+  boolean_literals:
+    true_val: true
+    false_val: false
+    yes_val: yes
+    no_val: no
+    on_val: on
+    off_val: off
+  string_values:
+    true_str: "true"
+    false_str: "false"
+    yes_str: "yes"
+    no_str: "no"
+    on_str: "on"
+    off_str: "off"
