@@ -356,52 +356,52 @@ Examples:
     )
     parser.add_argument(
         "-o", "--output", dest="output_file",
-        help="Output file path (only for single file input, otherwise files are overwritten)"
+        help="Output file path (only for single file input, otherwise files are overwritten)",
     )
     parser.add_argument(
         "--json-indent", type=int, default=2, metavar="SPACES",
-        help="Number of spaces for JSON indentation (default: 2)"
+        help="Number of spaces for JSON indentation (default: 2)",
     )
     parser.add_argument(
         "--yaml-indent", type=int, default=2, metavar="SPACES",
-        help="Number of spaces for YAML indentation (default: 2)"
+        help="Number of spaces for YAML indentation (default: 2)",
     )
     parser.add_argument(
         "--recursive", action="store_true",
-        help="Recursively search directories for JSON/YAML files"
+        help="Recursively search directories for JSON/YAML files",
     )
     parser.add_argument(
         "--pattern", action="store_true",
-        help="Treat input arguments as glob patterns (e.g., './**/*.json')"
+        help="Treat input arguments as glob patterns (e.g., './**/*.json')",
     )
     parser.add_argument(
         "--regex", type=str, metavar="PATTERN",
-        help="Regular expression to filter file paths (e.g., '.*_config\\.ya?ml$')"
+        help="Regular expression to filter file paths (e.g., '.*_config\\.ya?ml$')",
     )
     parser.add_argument(
         "--check", action="store_true",
-        help="Check if files are properly formatted without modifying them (useful for CI)"
+        help="Check if files are properly formatted without modifying them (useful for CI)",
     )
     parser.add_argument(
         "--sort-arrays-by-first-key", action="store_true",
-        help="Sort arrays of objects by the value of the first key in each object"
+        help="Sort arrays of objects by the value of the first key in each object",
     )
     parser.add_argument(
         "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Set logging level (default: INFO)"
+        help="Set logging level (default: INFO)",
     )
     args = parser.parse_args()
 
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),
-        format="%(levelname)s: %(message)s"
+        format="%(levelname)s: %(message)s",
     )
 
     files = find_files(
         args.inputs,
         recursive=args.recursive,
         regex=args.regex,
-        pattern_mode=args.pattern
+        pattern_mode=args.pattern,
     )
 
     if not files:
@@ -418,7 +418,7 @@ Examples:
                 json_indent=args.json_indent,
                 yaml_indent=args.yaml_indent,
                 check=False,
-                sort_arrays_by_first_key=args.sort_arrays_by_first_key
+                sort_arrays_by_first_key=args.sort_arrays_by_first_key,
             )
         except Exception:
             logger.exception("Error processing file")
@@ -434,7 +434,7 @@ Examples:
                     json_indent=args.json_indent,
                     yaml_indent=args.yaml_indent,
                     check=args.check,
-                    sort_arrays_by_first_key=args.sort_arrays_by_first_key
+                    sort_arrays_by_first_key=args.sort_arrays_by_first_key,
                 )
                 if args.check and not ok:
                     failed.append(str(f))
