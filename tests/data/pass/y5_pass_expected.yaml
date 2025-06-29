@@ -1,0 +1,28 @@
+allow_postgres_versions:
+- 10.23
+- 12.13
+- 9.5.25
+- 9.6.24
+flush_cache:
+  true:
+  - memory_pressure
+  - push
+  priority: background
+geoblock_regions:
+- dk
+- fi
+- is
+- 'no'
+- se
+port_mapping:
+- '22:22'
+- 443:443
+- 80:80
+serve:
+- '!.git'
+- '*.html'
+- '*.png'
+- /favicon.ico
+- /robots.txt
+server_config:
+server_config2:

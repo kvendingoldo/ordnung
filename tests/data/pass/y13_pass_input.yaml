@@ -1,0 +1,40 @@
+languages:
+  french:
+    greeting: "Bonjour le monde"
+    goodbye: "Au revoir"
+    numbers: [un, deux, trois, quatre, cinq]
+  russian:
+    greeting: "Привет мир"
+    goodbye: "До свидания"
+    numbers: [один, два, три, четыре, пять]
+  chinese:
+    greeting: "你好世界"
+    goodbye: "再见"
+    numbers: [一, 二, 三, 四, 五]
+  english:
+    greeting: "Hello world"
+    goodbye: "Goodbye"
+    numbers: [one, two, three, four, five]
+
+cities:
+  paris: "Париж"
+  moscow: "Москва"
+  beijing: "北京"
+  london: "London"
+
+mixed_content:
+  unicode_strings:
+    - "café"
+    - "naïve"
+    - "résumé"
+    - "über"
+  emoji:
+    - "🚀"
+    - "🌟"
+    - "🎉"
+    - "🔥"
+  special_chars:
+    - "ñ"
+    - "é"
+    - "ü"
+    - "ß"

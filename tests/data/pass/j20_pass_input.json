@@ -1,0 +1,12 @@
+{
+  "users": [
+    { "name": "zebra", "age": 30, "city": "zoo" },
+    { "name": "apple", "age": 25, "city": "garden" },
+    { "name": "banana", "age": 35, "city": "market" }
+  ],
+  "products": [
+    { "id": 3, "name": "zebra", "price": 100 },
+    { "id": 1, "name": "apple", "price": 50 },
+    { "id": 2, "name": "banana", "price": 75 }
+  ]
+}

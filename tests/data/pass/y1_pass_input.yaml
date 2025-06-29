@@ -1,0 +1,10 @@
+config:
+  patterns:
+    - "*.{html,css,js}"
+    - "*.{py,pyc}"
+  paths:
+    - "/path/to/{file1,file2}"
+data:
+  values:
+    - "value1"
+    - "value2"

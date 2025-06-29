@@ -66,7 +66,7 @@ ignore = [
     "PLR0904", # too many public methods
     "PERF203",
     "TRY003",
-    "TRY301"
+    "TRY301",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -128,13 +128,6 @@ max-complexity = 10
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/**/*" = ["PLR2004", "S101"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-markers = [
-    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-]
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "PyYAML>=6.0"]

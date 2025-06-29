@@ -1,0 +1,8 @@
+{
+  "empty_dict": {},
+  "empty_list": [],
+  "nested_empty": {
+    "empty_dict": {},
+    "empty_list": []
+  }
+}

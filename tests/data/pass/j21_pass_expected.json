@@ -1,0 +1,44 @@
+{
+  "arrays": [
+    [
+      1,
+      2,
+      3
+    ],
+    [
+      "apple",
+      "banana",
+      "zebra"
+    ],
+    [
+      {
+        "name": "zebra"
+      },
+      {
+        "name": "apple"
+      }
+    ]
+  ],
+  "nested": {
+    "apple": {
+      "charlie": "value3",
+      "delta": "value4"
+    },
+    "zebra": {
+      "alpha": "value1",
+      "beta": "value2"
+    }
+  },
+  "numbers": [
+    1,
+    1,
+    3,
+    4,
+    5
+  ],
+  "strings": [
+    "apple",
+    "banana",
+    "zebra"
+  ]
+}

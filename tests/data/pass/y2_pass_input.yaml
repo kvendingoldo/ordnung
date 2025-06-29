@@ -1,0 +1,15 @@
+config:
+  boolean_values:
+    enabled: on
+    disabled: off
+    yes_value: yes
+    no_value: no
+    true_value: true
+    false_value: false
+  port_mappings:
+    - 22:22
+    - 80:8080
+    - 443:8443
+  special_tags:
+    git_ignore: !.git
+    docker_ignore: !.dockerignore

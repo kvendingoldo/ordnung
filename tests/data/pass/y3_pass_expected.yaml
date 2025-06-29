@@ -1,0 +1,15 @@
+config:
+  boolean_literals:
+    false_val: false
+    no_val: 'no'
+    off_val: 'off'
+    on_val: 'on'
+    true_val: true
+    yes_val: 'yes'
+  string_values:
+    false_str: 'false'
+    no_str: 'no'
+    off_str: 'off'
+    on_str: 'on'
+    true_str: 'true'
+    yes_str: 'yes'

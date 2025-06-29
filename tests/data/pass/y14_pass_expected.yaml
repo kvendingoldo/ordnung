@@ -1,0 +1,6 @@
+config:
+  paths:
+  - /path/to/{file1,file2}
+  patterns:
+  - '*.{html,css,js}'
+  - '*.{py,pyc}'

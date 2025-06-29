@@ -1,0 +1,7 @@
+{
+  "strings": ["c", "a", "b"],
+  "numbers": [3, 1, 2],
+  "booleans": [false, true, false],
+  "nulls": [null, null, null],
+  "mixed": ["string", 42, true, null]
+}

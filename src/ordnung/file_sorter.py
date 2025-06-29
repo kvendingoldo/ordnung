@@ -26,12 +26,12 @@ class NorwaySafeLoader(yaml.SafeLoader):
     def construct_yaml_bool(self, node):
         """Override boolean construction to handle Norway problem."""
         value = self.construct_scalar(node)
-        if value in ['off', 'no', 'n', 'on', 'yes', 'y']:
+        if value in ["off", "no", "n", "on", "yes", "y"]:
             # These should be treated as strings, not booleans
             return value
         # For actual boolean values, use the standard behavior
-        if value in ['true', 'false']:
-            return value == 'true'
+        if value in ["true", "false"]:
+            return value == "true"
         return value
 
     def construct_undefined(self, node):
@@ -41,20 +41,18 @@ class NorwaySafeLoader(yaml.SafeLoader):
     def fetch_alias(self):
         """Override to handle glob patterns that start with *."""
         # Check if the next token looks like a glob pattern
-        if self.peek() == '*':
-            # Look ahead to see if it's followed by a dot (like *.html)
-            if self.peek(1) == '.':
-                # This is likely a glob pattern, not an alias
-                # Skip the alias parsing and treat as a regular scalar
-                return self.fetch_plain()
+        if self.peek() == "*" and self.peek(1) == ".":
+            # This is likely a glob pattern, not an alias
+            # Skip the alias parsing and treat as a regular scalar
+            return self.fetch_plain()
         return super().fetch_alias()
 
     def construct_yaml_timestamp(self, node):
         """Override timestamp construction to handle port mappings like 22:22 as strings."""
         value = self.construct_scalar(node)
         # If it looks like a port mapping (number:number), treat as string
-        if ':' in value and len(value.split(':')) == 2:
-            parts = value.split(':')
+        if ":" in value and len(value.split(":")) == 2:
+            parts = value.split(":")
             if parts[0].isdigit() and parts[1].isdigit():
                 # This looks like a port mapping, keep as string
                 return value
@@ -62,29 +60,38 @@ class NorwaySafeLoader(yaml.SafeLoader):
         return super().construct_yaml_timestamp(node)
 
 
+# Add multi-constructor for unknown tags
+def unknown_tag_constructor(loader, tag_suffix, node):
+    """Handle unknown tags by treating them as strings."""
+    return loader.construct_scalar(node)
+
+
+NorwaySafeLoader.add_multi_constructor('!', unknown_tag_constructor)
+
+
 # Remove the implicit resolver for timestamps from NorwaySafeLoader for all keys, including None
 for ch in list(NorwaySafeLoader.yaml_implicit_resolvers):
     resolvers = NorwaySafeLoader.yaml_implicit_resolvers[ch]
     NorwaySafeLoader.yaml_implicit_resolvers[ch] = [
-        (tag, regexp) for tag, regexp in resolvers if tag != 'tag:yaml.org,2002:timestamp'
+        (tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:timestamp"
     ]
 # Also remove for None key
 if None in NorwaySafeLoader.yaml_implicit_resolvers:
     resolvers = NorwaySafeLoader.yaml_implicit_resolvers[None]
     NorwaySafeLoader.yaml_implicit_resolvers[None] = [
-        (tag, regexp) for tag, regexp in resolvers if tag != 'tag:yaml.org,2002:timestamp'
+        (tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:timestamp"
     ]
 
 
 class NorwaySafeDumper(yaml.SafeDumper):
     def represent_str(self, data):
         if data in {"off", "no", "n", "on", "yes", "y"}:
-            return self.represent_scalar('tag:yaml.org,2002:str', data, style="'")
+            return self.represent_scalar("tag:yaml.org,2002:str", data, style="'")
         return super().represent_str(data)
 
     def represent_none(self, _):
         """Represent None as empty value instead of explicit null."""
-        return self.represent_scalar('tag:yaml.org,2002:null', '')
+        return self.represent_scalar("tag:yaml.org,2002:null", "")
 
 
 # Register the custom string representer
@@ -169,15 +176,14 @@ def load_file(file_path: str, file_type: str) -> Any:
                            lambda m: f"{m.group(1)}'{m.group(2)}'{m.group(3) or ''}{m.group(4) or ''}",
                            yaml_text, flags=re.MULTILINE)
         # 3. Norway-problem values in sequences: - off, - no, - n, - on, - yes, - y
-        np_words = r'(off|no|n|on|yes|y)'
+        np_words = r"(off|no|n|on|yes|y)"
         yaml_text = re.sub(rf"^([ \t]*-[ \t]*)(?<!['\"])(?P<val>{np_words})(?!['\"])([ \t]*)(#.*)?$",
                            lambda m: f"{m.group(1)}'{m.group('val')}'{m.group(4) or ''}{m.group(5) or ''}",
                            yaml_text, flags=re.MULTILINE)
         # 4. Norway-problem values in mappings: key: off
-        yaml_text = re.sub(rf"^([ \t]*[\w\-]+:[ \t]*)(?<!['\"])(?P<val>{np_words})(?!['\"])([ \t]*)(#.*)?$",
-                           lambda m: f"{m.group(1)}'{m.group('val')}'{m.group(4) or ''}{m.group(5) or ''}",
-                           yaml_text, flags=re.MULTILINE)
-        return yaml_text
+        return re.sub(rf"^([ \t]*[\w\-]+:[ \t]*)(?<!['\"])(?P<val>{np_words})(?!['\"])([ \t]*)(#.*)?$",
+                      lambda m: f"{m.group(1)}'{m.group('val')}'{m.group(4) or ''}{m.group(5) or ''}",
+                      yaml_text, flags=re.MULTILINE)
     try:
         with Path(file_path).open(encoding="utf-8") as f:
             content = f.read()

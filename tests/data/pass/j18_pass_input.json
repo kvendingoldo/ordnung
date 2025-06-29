@@ -1,0 +1,14 @@
+{
+  "zebra": {
+    "beta": "value2",
+    "alpha": "value1"
+  },
+  "apple": {
+    "delta": "value4",
+    "charlie": "value3"
+  },
+  "banana": {
+    "foxtrot": "value6",
+    "echo": "value5"
+  }
+}
