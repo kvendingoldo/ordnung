@@ -2,7 +2,7 @@
 name = "ordnung"
 version = "0.1.0"
 description = "YAML/JSON sorter"
-requires-python = ">=3.13"
+requires-python = ">=3.8"
 
 [tool.uv]
 # uv will use requirements.txt for runtime deps
