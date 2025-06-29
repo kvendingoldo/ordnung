@@ -13,19 +13,15 @@ This module contains focused tests for:
 """
 
 import json
-import shutil
 import sys
 from pathlib import Path
 
-import pytest
 import yaml
 
 from ordnung.file_sorter import (
-    FileLoadError,
-    sort_file,
     find_files,
+    sort_file,
 )
-from .conftest import compare_json_files, compare_yaml_files
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -60,7 +56,7 @@ class TestBatchProcessing:
             sort_file(str(file_path))
 
         # Verify all files are sorted
-        for filename, original_data in files_data:
+        for filename, _original_data in files_data:
             file_path = test_dir / filename
             with file_path.open() as f:
                 sorted_data = json.load(f)
@@ -101,7 +97,7 @@ class TestBatchProcessing:
             sort_file(str(file_path))
 
         # Verify all files are sorted
-        for filename, original_data in files_data:
+        for filename, _original_data in files_data:
             file_path = test_dir / filename
             with file_path.open() as f:
                 sorted_data = yaml.safe_load(f)
@@ -165,7 +161,6 @@ class TestCheckMode:
     def test_check_mode_yaml_not_sorted(self, tmp_path):
         """Test check mode on unsorted YAML file."""
         file_path = tmp_path / "unsorted.yaml"
-        data = {"c": 3, "a": 1, "b": 2}
 
         # Create unsorted YAML content manually to ensure it's not sorted
         yaml_content = """c: 3
@@ -238,7 +233,8 @@ class TestRegexFiltering:
         with yaml_file.open() as f:
             content = f.read()
         # Check that the YAML content still has the original order
-        assert "y: 2" in content and "x: 1" in content
+        assert "y: 2" in content
+        assert "x: 1" in content
 
     def test_regex_filter_specific_pattern(self, tmp_path):
         """Test regex filtering with specific pattern."""
@@ -288,7 +284,7 @@ class TestDifferentIndentation:
         for line in lines:
             if line.strip() and not line.strip().startswith("{") and not line.strip().startswith("}"):
                 assert line.startswith(
-                    "    "), f"Expected 4-space indentation, got: {repr(line)}"
+                    "    "), f"Expected 4-space indentation, got: {line!r}"
 
     def test_yaml_different_indent(self, tmp_path):
         """Test YAML files with different indentation."""
@@ -300,8 +296,8 @@ class TestDifferentIndentation:
             "nested": {"x": 1, "y": 2},
             "list": [
                 {"foo": 1, "bar": 2},
-                {"baz": 3, "qux": 4}
-            ]
+                {"baz": 3, "qux": 4},
+            ],
         }
 
         with file_path.open("w") as f:
@@ -320,12 +316,12 @@ class TestDifferentIndentation:
             if line.strip() and ":" in line and not line.startswith(" ") and not line.startswith("-"):
                 # This is a top-level key
                 assert not line.startswith(
-                    " "), f"Top-level key should not be indented: {repr(line)}"
+                    " "), f"Top-level key should not be indented: {line!r}"
         # All nested keys (including those in lists) should be indented by 4 spaces
         for line in lines:
             if line.strip().startswith(("x:", "y:", "foo:", "bar:", "baz:", "qux:")):
                 assert line.startswith(
-                    "    "), f"Nested key should be indented by 4 spaces: {repr(line)}"
+                    "    "), f"Nested key should be indented by 4 spaces: {line!r}"
 
 
 class TestOverwriteExistingFile:
@@ -362,7 +358,6 @@ class TestOverwriteExistingFile:
     def test_overwrite_yaml_file(self, tmp_path):
         """Test overwriting an existing YAML file."""
         file_path = tmp_path / "test.yaml"
-        original_data = {"c": 3, "a": 1, "b": 2}
 
         # Create original file with unsorted content
         yaml_content = """c: 3
@@ -481,7 +476,7 @@ class TestSortArraysByFirstKey:
                 {"name": "Charlie", "id": 3},
                 {"name": "Alice", "id": 1},
                 {"name": "Bob", "id": 2},
-            ]
+            ],
         }
 
         with file_path.open("w") as f:
@@ -507,7 +502,7 @@ class TestSortArraysByFirstKey:
                 {"name": "Charlie", "id": 3},
                 {"name": "Alice", "id": 1},
                 {"name": "Bob", "id": 2},
-            ]
+            ],
         }
 
         with file_path.open("w") as f:
@@ -534,7 +529,7 @@ class TestSortArraysByFirstKey:
                 {"name": "Charlie", "id": 3},
                 {"name": "Alice", "id": 1},
                 {"name": "Bob", "id": 2},
-            ]
+            ],
         }
 
         with file_path.open("w") as f:
@@ -560,7 +555,7 @@ class TestSortArraysByFirstKey:
                 {"name": "Charlie", "id": 3},
                 {"name": "Alice", "id": 1},
                 {"name": "Bob", "id": 2},
-            ]
+            ],
         }
 
         with file_path.open("w") as f:
@@ -589,7 +584,7 @@ class TestSortArraysByFirstKey:
                 {"name": "Alice", "id": 1},
                 42,
                 {"name": "Bob", "id": 2},
-            ]
+            ],
         }
 
         with file_path.open("w") as f:

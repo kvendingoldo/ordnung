@@ -6,19 +6,18 @@ This module contains comprehensive tests for the file sorting functionality,
 including various JSON and YAML structures, edge cases, and batch processing.
 """
 
-import json
 import shutil
 import sys
 from pathlib import Path
 
 import pytest
-import yaml
-from .conftest import compare_json_files, compare_yaml_files
 
 from ordnung.file_sorter import (
     FileLoadError,
     sort_file,
 )
+
+from .conftest import compare_json_files, compare_yaml_files
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
