@@ -3,12 +3,36 @@ name = "ordnung"
 version = "0.1.0"
 description = "A Python utility for sorting YAML and JSON files with support for batch processing, directory traversal, and pattern matching"
 readme = "README.md"
-license = { text = "MIT" }
-authors = [{ name = "Your Name", email = "your.email@example.com" }]
-keywords = ["yaml", "json", "sort", "format", "cli"]
-classifiers = ["Topic :: Utilities"]
+license = { text = "Apache-2.0" }
+authors = [{ name = "Alexander Sharov" }]
+keywords = ["yaml", "json", "sort", "format", "cli", "configuration", "files"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
 requires-python = ">=3.8"
 dependencies = ["PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/kvendingoldo/ordnung"
+Documentation = "https://github.com/kvendingoldo/ordnung#readme"
+Repository = "https://github.com/kvendingoldo/ordnung.git"
+Issues = "https://github.com/kvendingoldo/ordnung/issues"
+Changelog = "https://github.com/kvendingoldo/ordnung/blob/main/CHANGELOG.md"
 
 [project.scripts]
 ordnung = "ordnung.file_sorter:main"
@@ -27,54 +51,54 @@ build-backend = "hatchling.build"
 [tool.ruff]
 # Enable pycodestyle (`E`), Pyflakes (`F`), and isort (`I`) codes
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # Pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "UP",   # pyupgrade
-    "N",    # pep8-naming
-    "Q",    # flake8-quotes
-    "SIM",  # flake8-simplify
-    "ARG",  # flake8-unused-arguments
-    "PIE",  # flake8-pie
-    "TID",  # flake8-tidy-imports
-    "RSE",  # flake8-raise
-    "RET",  # flake8-return
-    "SLF",  # flake8-self
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # Pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+    "PIE", # flake8-pie
+    "TID", # flake8-tidy-imports
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SLF", # flake8-self
     "SLOT", # flake8-slots
-    "PTH",  # flake8-use-pathlib
-    "LOG",  # flake8-logging-format
-    "T20",  # flake8-print
-    "PYI",  # flake8-pyi
-    "PT",   # flake8-pytest-style
-    "YTT",  # flake8-2020
-    "FBT",  # flake8-boolean-trap
-    "A",    # flake8-builtins
-    "COM",  # flake8-commas
-    "C90",  # mccabe
-    "DTZ",  # flake8-datetimez
-    "ISC",  # flake8-implicit-str-concat
-    "G",    # flake8-logging-format
-    "INP",  # flake8-no-pep420
-    "ERA",  # eradicate
-    "PD",   # pandas-vet
-    "PGH",  # pygrep-hooks
-    "PL",   # pylint
-    "TRY",  # tryceratops
-    "NPY",  # numpy-vet
-    "AIR",  # flake8-airflow
+    "PTH", # flake8-use-pathlib
+    "LOG", # flake8-logging-format
+    "T20", # flake8-print
+    "PYI", # flake8-pyi
+    "PT", # flake8-pytest-style
+    "YTT", # flake8-2020
+    "FBT", # flake8-boolean-trap
+    "A", # flake8-builtins
+    "COM", # flake8-commas
+    "C90", # mccabe
+    "DTZ", # flake8-datetimez
+    "ISC", # flake8-implicit-str-concat
+    "G", # flake8-logging-format
+    "INP", # flake8-no-pep420
+    "ERA", # eradicate
+    "PD", # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL", # pylint
+    "TRY", # tryceratops
+    "NPY", # numpy-vet
+    "AIR", # flake8-airflow
     "PERF", # perflint
     "FURB", # refurb
-    "RUF",  # ruff-specific rules
+    "RUF", # ruff-specific rules
 ]
 
 # Never enforce `E501` (line length violations) in docstrings or comments
 ignore = [
-    "E501",    # line too long, handled by line-length
-    "B008",    # do not perform function calls in argument defaults
-    "C901",    # too complex
+    "E501", # line too long, handled by line-length
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
     "PLR0913", # too many arguments to function call
     "PLR0912", # too many branches
     "PLR0915", # too many statements
@@ -149,54 +173,54 @@ max-complexity = 10
 [tool.ruff.lint]
 # Enable pycodestyle (`E`), Pyflakes (`F`), and isort (`I`) codes
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # Pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "UP",   # pyupgrade
-    "N",    # pep8-naming
-    "Q",    # flake8-quotes
-    "SIM",  # flake8-simplify
-    "ARG",  # flake8-unused-arguments
-    "PIE",  # flake8-pie
-    "TID",  # flake8-tidy-imports
-    "RSE",  # flake8-raise
-    "RET",  # flake8-return
-    "SLF",  # flake8-self
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # Pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+    "PIE", # flake8-pie
+    "TID", # flake8-tidy-imports
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SLF", # flake8-self
     "SLOT", # flake8-slots
-    "PTH",  # flake8-use-pathlib
-    "LOG",  # flake8-logging-format
-    "T20",  # flake8-print
-    "PYI",  # flake8-pyi
-    "PT",   # flake8-pytest-style
-    "YTT",  # flake8-2020
-    "FBT",  # flake8-boolean-trap
-    "A",    # flake8-builtins
-    "COM",  # flake8-commas
-    "C90",  # mccabe
-    "DTZ",  # flake8-datetimez
-    "ISC",  # flake8-implicit-str-concat
-    "G",    # flake8-logging-format
-    "INP",  # flake8-no-pep420
-    "ERA",  # eradicate
-    "PD",   # pandas-vet
-    "PGH",  # pygrep-hooks
-    "PL",   # pylint
-    "TRY",  # tryceratops
-    "NPY",  # numpy-vet
-    "AIR",  # flake8-airflow
+    "PTH", # flake8-use-pathlib
+    "LOG", # flake8-logging-format
+    "T20", # flake8-print
+    "PYI", # flake8-pyi
+    "PT", # flake8-pytest-style
+    "YTT", # flake8-2020
+    "FBT", # flake8-boolean-trap
+    "A", # flake8-builtins
+    "COM", # flake8-commas
+    "C90", # mccabe
+    "DTZ", # flake8-datetimez
+    "ISC", # flake8-implicit-str-concat
+    "G", # flake8-logging-format
+    "INP", # flake8-no-pep420
+    "ERA", # eradicate
+    "PD", # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL", # pylint
+    "TRY", # tryceratops
+    "NPY", # numpy-vet
+    "AIR", # flake8-airflow
     "PERF", # perflint
     "FURB", # refurb
-    "RUF",  # ruff-specific rules
+    "RUF", # ruff-specific rules
 ]
 
 # Never enforce `E501` (line length violations) in docstrings or comments
 ignore = [
-    "E501",    # line too long, handled by line-length
-    "B008",    # do not perform function calls in argument defaults
-    "C901",    # too complex
+    "E501", # line too long, handled by line-length
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
     "PLR0913", # too many arguments to function call
     "PLR0912", # too many branches
     "PLR0915", # too many statements

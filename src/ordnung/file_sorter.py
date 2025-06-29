@@ -314,47 +314,96 @@ def find_files(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Sort YAML and JSON files (single file, multiple files, directory, or pattern)",
+        description="Sort YAML and JSON files alphabetically by keys. Supports single files, multiple files, directories, and glob patterns.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m ordnung.file_sorter file1.json file2.yaml
-  python -m ordnung.file_sorter ./mydir --recursive
-  python -m ordnung.file_sorter './data/**/*.json' --pattern
-  python -m ordnung.file_sorter ./mydir --regex '.*\\.ya?ml$'
-  python -m ordnung.file_sorter ./mydir --check  # Check mode (CI)
-  python -m ordnung.file_sorter data.json --sort-arrays-by-first-key  # Sort arrays of objects by first key
+  # Sort single files
+  ordnung config.json
+  ordnung settings.yaml
+
+  # Sort multiple files
+  ordnung file1.json file2.yaml file3.yml
+
+  # Sort all JSON/YAML files in a directory
+  ordnung ./configs --recursive
+
+  # Use glob patterns to find files
+  ordnung './data/**/*.json' --pattern
+  ordnung './configs/*.yaml' --pattern
+
+  # Filter files with regex
+  ordnung ./mydir --regex '.*\\.ya?ml$'
+  ordnung ./data --regex '.*_prod\\.json$'
+
+  # Check mode (CI): verify formatting without rewriting
+  ordnung ./data --check
+
+  # Sort arrays of objects by first key value
+  ordnung data.json --sort-arrays-by-first-key
+
+  # Custom indentation
+  ordnung config.json --json-indent 4
+  ordnung settings.yaml --yaml-indent 4
+
+  # Save to new file
+  ordnung input.json -o sorted.json
         """,
     )
     parser.add_argument(
         "inputs", nargs="+",
-        help="Input file(s), directory(ies), or glob pattern(s)",
+        help="Input file(s), directory(ies), or glob pattern(s) to process",
     )
-    parser.add_argument("-o", "--output", dest="output_file",
-                        help="Output file (only for single file input)")
-    parser.add_argument("--json-indent", type=int, default=2,
-                        help="Indentation for JSON files (default: 2)")
-    parser.add_argument("--yaml-indent", type=int, default=2,
-                        help="Indentation for YAML files (default: 2)")
-    parser.add_argument("--recursive", action="store_true",
-                        help="Recursively search directories")
-    parser.add_argument("--pattern", action="store_true",
-                        help="Treat input as glob pattern(s)")
-    parser.add_argument("--regex", type=str,
-                        help="Regex to further filter files")
-    parser.add_argument("--check", action="store_true",
-                        help="Check if files are formatted (do not rewrite)")
-    parser.add_argument("--sort-arrays-by-first-key", action="store_true",
-                        help="Sort arrays of objects by the value of the first key in each object")
-    parser.add_argument("--log-level", default="INFO",
-                        help="Set log level (DEBUG, INFO, WARNING, ERROR)")
+    parser.add_argument(
+        "-o", "--output", dest="output_file",
+        help="Output file path (only for single file input, otherwise files are overwritten)"
+    )
+    parser.add_argument(
+        "--json-indent", type=int, default=2, metavar="SPACES",
+        help="Number of spaces for JSON indentation (default: 2)"
+    )
+    parser.add_argument(
+        "--yaml-indent", type=int, default=2, metavar="SPACES",
+        help="Number of spaces for YAML indentation (default: 2)"
+    )
+    parser.add_argument(
+        "--recursive", action="store_true",
+        help="Recursively search directories for JSON/YAML files"
+    )
+    parser.add_argument(
+        "--pattern", action="store_true",
+        help="Treat input arguments as glob patterns (e.g., './**/*.json')"
+    )
+    parser.add_argument(
+        "--regex", type=str, metavar="PATTERN",
+        help="Regular expression to filter file paths (e.g., '.*_config\\.ya?ml$')"
+    )
+    parser.add_argument(
+        "--check", action="store_true",
+        help="Check if files are properly formatted without modifying them (useful for CI)"
+    )
+    parser.add_argument(
+        "--sort-arrays-by-first-key", action="store_true",
+        help="Sort arrays of objects by the value of the first key in each object"
+    )
+    parser.add_argument(
+        "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set logging level (default: INFO)"
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=getattr(logging, args.log_level.upper(
-    ), logging.INFO), format="%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=getattr(logging, args.log_level.upper(), logging.INFO),
+        format="%(levelname)s: %(message)s"
+    )
 
-    files = find_files(args.inputs, recursive=args.recursive,
-                       regex=args.regex, pattern_mode=args.pattern)
+    files = find_files(
+        args.inputs,
+        recursive=args.recursive,
+        regex=args.regex,
+        pattern_mode=args.pattern
+    )
+
     if not files:
         logger.error("No matching YAML/JSON files found.")
         sys.exit(1)
@@ -363,34 +412,48 @@ Examples:
     if len(files) == 1 and args.output_file and not args.check:
         # Single file, output specified
         try:
-            sort_file(str(files[0]), args.output_file,
-                      json_indent=args.json_indent, yaml_indent=args.yaml_indent, check=False, sort_arrays_by_first_key=args.sort_arrays_by_first_key)
+            sort_file(
+                str(files[0]),
+                args.output_file,
+                json_indent=args.json_indent,
+                yaml_indent=args.yaml_indent,
+                check=False,
+                sort_arrays_by_first_key=args.sort_arrays_by_first_key
+            )
         except Exception:
-            logger.exception("Error")
+            logger.exception("Error processing file")
             sys.exit(1)
     else:
         # Multiple files or check mode
         for f in files:
             try:
                 logger.info("\nProcessing: %s", f)
-                ok = sort_file(str(f), None, json_indent=args.json_indent,
-                               yaml_indent=args.yaml_indent, check=args.check, sort_arrays_by_first_key=args.sort_arrays_by_first_key)
+                ok = sort_file(
+                    str(f),
+                    None,
+                    json_indent=args.json_indent,
+                    yaml_indent=args.yaml_indent,
+                    check=args.check,
+                    sort_arrays_by_first_key=args.sort_arrays_by_first_key
+                )
                 if args.check and not ok:
                     failed.append(str(f))
             except Exception:
                 logger.exception("Error processing %s", f)
                 if args.check:
                     failed.append(str(f))
+
         if args.check:
             if failed:
-                logger.error("\n%d file(s) are not formatted:", len(failed))
+                logger.error(
+                    "\n%d file(s) are not properly formatted:", len(failed))
                 for f in failed:
                     logger.error("  %s", f)
                 sys.exit(1)
             else:
-                logger.info("All files are formatted.")
+                logger.info("All files are properly formatted.")
         else:
-            logger.info("\nProcessed %d file(s).", len(files))
+            logger.info("\nSuccessfully processed %d file(s).", len(files))
 
 
 if __name__ == "__main__":
