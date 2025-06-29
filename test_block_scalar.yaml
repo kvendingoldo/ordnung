@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  another-key: |
+    This is a multi-line
+    block scalar that should
+    be preserved
+  haproxy.org/backend-config-snippet: |
+    acl robots_path path_beg /robots.txt
+    http-request return status 200 content-type "text/plain" lf-string "User-agent: *\nDisallow: /\n" if robots_path
+  simple-key: simple-value
+kind: ConfigMap
+metadata:
+  name: test-config
