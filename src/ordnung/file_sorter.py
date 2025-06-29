@@ -61,12 +61,12 @@ class NorwaySafeLoader(yaml.SafeLoader):
 
 
 # Add multi-constructor for unknown tags
-def unknown_tag_constructor(loader, tag_suffix, node):
+def unknown_tag_constructor(loader, _tag_suffix, node):
     """Handle unknown tags by treating them as strings."""
     return loader.construct_scalar(node)
 
 
-NorwaySafeLoader.add_multi_constructor('!', unknown_tag_constructor)
+NorwaySafeLoader.add_multi_constructor("!", unknown_tag_constructor)
 
 
 # Remove the implicit resolver for timestamps from NorwaySafeLoader for all keys, including None

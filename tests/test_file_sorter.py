@@ -10,12 +10,12 @@ import json
 import shutil
 import sys
 from pathlib import Path
-import os
 
 import pytest
 import yaml
 
 from ordnung.file_sorter import (
+    FileLoadError,
     sort_file,
 )
 
@@ -28,13 +28,13 @@ fail_dir = Path(__file__).parent / "data" / "fail"
 
 def compare_json_files(f1, f2):
     """Compare two JSON files by content."""
-    with open(f1) as a, open(f2) as b:
+    with Path(f1).open() as a, Path(f2).open() as b:
         return json.load(a) == json.load(b)
 
 
 def compare_yaml_files(f1, f2):
     """Compare two YAML files by loading them as objects."""
-    with open(f1) as a, open(f2) as b:
+    with Path(f1).open() as a, Path(f2).open() as b:
         return yaml.safe_load(a) == yaml.safe_load(b)
 
 
@@ -48,7 +48,7 @@ def create_pass_test(input_file, expected_file, ext):
         expected_path = data_dir / expected_file
         assert expected_path.exists(
         ), f"Expected file {expected_file} does not exist!"
-        if ext == '.json':
+        if ext == ".json":
             assert compare_json_files(temp_file, expected_path)
         else:
             assert compare_yaml_files(temp_file, expected_path)
@@ -62,45 +62,45 @@ def create_fail_test(input_file):
         temp_file = tmp_path / input_file
         shutil.copy(input_path, temp_file)
         # This file should have invalid syntax and fail
-        with pytest.raises(Exception):
+        with pytest.raises(FileLoadError):
             sort_file(str(temp_file))
     return test_func
 
 
 # Auto-generate tests for each input file in pass/
-pass_input_files = [f for f in os.listdir(data_dir) if f.endswith(
-    '_input.json') or f.endswith('_input.yaml')]
+pass_input_files = [f for f in data_dir.iterdir() if f.name.endswith(
+    ("_input.json", "_input.yaml"))]
 
 for input_file in pass_input_files:
-    if input_file.endswith('_input.json'):
-        base = input_file[:-11]  # Remove '_input.json'
-        ext = '.json'
-    elif input_file.endswith('_input.yaml'):
-        base = input_file[:-11]  # Remove '_input.yaml'
-        ext = '.yaml'
+    if input_file.name.endswith("_input.json"):
+        base = input_file.name[:-11]  # Remove '_input.json'
+        ext = ".json"
+    elif input_file.name.endswith("_input.yaml"):
+        base = input_file.name[:-11]  # Remove '_input.yaml'
+        ext = ".yaml"
     else:
         continue
     expected_file = f"{base}_expected{ext}"
 
-    test_func = create_pass_test(input_file, expected_file, ext)
+    test_func = create_pass_test(input_file.name, expected_file, ext)
     test_func.__name__ = f"test_{base}"
-    test_func.__doc__ = f"Test sorting for {input_file}."
+    test_func.__doc__ = f"Test sorting for {input_file.name}."
     globals()[f"test_{base}"] = test_func
 
 
 # Auto-generate tests for each input file in fail/
-fail_input_files = [f for f in os.listdir(fail_dir) if f.endswith(
-    '_input.json') or f.endswith('_input.yaml')]
+fail_input_files = [f for f in fail_dir.iterdir() if f.name.endswith(
+    ("_input.json", "_input.yaml"))]
 
 for input_file in fail_input_files:
-    if input_file.endswith('_input.json'):
-        base = input_file[:-11]  # Remove '_input.json'
-    elif input_file.endswith('_input.yaml'):
-        base = input_file[:-11]  # Remove '_input.yaml'
+    if input_file.name.endswith("_input.json"):
+        base = input_file.name[:-11]  # Remove '_input.json'
+    elif input_file.name.endswith("_input.yaml"):
+        base = input_file.name[:-11]  # Remove '_input.yaml'
     else:
         continue
 
-    test_func = create_fail_test(input_file)
+    test_func = create_fail_test(input_file.name)
     test_func.__name__ = f"test_{base}"
-    test_func.__doc__ = f"Test that {input_file} fails as expected."
+    test_func.__doc__ = f"Test that {input_file.name} fails as expected."
     globals()[f"test_{base}"] = test_func
