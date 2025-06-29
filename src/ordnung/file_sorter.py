@@ -87,6 +87,9 @@ class NorwaySafeDumper(yaml.SafeDumper):
     def represent_str(self, data):
         if data in {"off", "no", "n", "on", "yes", "y"}:
             return self.represent_scalar("tag:yaml.org,2002:str", data, style="'")
+        # Check if the string contains newlines and should be a block scalar
+        if "\n" in data:
+            return self.represent_scalar("tag:yaml.org,2002:str", data, style="|")
         return super().represent_str(data)
 
     def represent_none(self, _):
