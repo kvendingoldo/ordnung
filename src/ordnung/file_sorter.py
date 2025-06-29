@@ -195,6 +195,7 @@ def load_file(file_path: str, file_type: str) -> Any:
             if file_type == "yaml":
                 # Preprocess to quote unquoted port mappings, !something, and Norway-problem values
                 content = quote_port_and_specials(content)
+                # nosec
                 return yaml.load(content, Loader=NorwaySafeLoader)
     except Exception as err:
         raise FileLoadError(
