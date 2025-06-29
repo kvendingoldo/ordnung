@@ -102,7 +102,7 @@ exclude = [
 line-length = 100
 indent-width = 4
 
-# Assume Python 3.8
+# Assume Python 3.8+
 target-version = "py38"
 
 [tool.ruff.format]
