@@ -19,7 +19,14 @@ A Python utility for sorting YAML and JSON files with support for batch processi
 
 ### Using pip
 ```bash
-pip install -r requirements.txt
+pip install ordnung
+```
+
+### From source
+```bash
+git clone <repository-url>
+cd ordnung
+pip install -e .
 ```
 
 ### Using uv (recommended)
@@ -38,38 +45,38 @@ docker build -t ordnung .
 
 Sort a single file and overwrite it:
 ```bash
-python -m ordnung.file_sorter data.json
-python -m ordnung.file_sorter config.yaml
+ordnung data.json
+ordnung config.yaml
 ```
 
 Sort a file and save to a new file:
 ```bash
-python -m ordnung.file_sorter data.json -o sorted_data.json
-python -m ordnung.file_sorter config.yaml -o sorted_config.yaml
+ordnung data.json -o sorted_data.json
+ordnung config.yaml -o sorted_config.yaml
 ```
 
 ### Batch Processing
 
 Sort multiple files:
 ```bash
-python -m ordnung.file_sorter file1.json file2.yaml file3.yml
+ordnung file1.json file2.yaml file3.yml
 ```
 
 Sort all JSON/YAML files in a directory:
 ```bash
-python -m ordnung.file_sorter ./mydir --recursive
+ordnung ./mydir --recursive
 ```
 
 Use glob patterns:
 ```bash
-python -m ordnung.file_sorter './data/**/*.json' --pattern
-python -m ordnung.file_sorter './configs/*.yaml' --pattern
+ordnung './data/**/*.json' --pattern
+ordnung './configs/*.yaml' --pattern
 ```
 
 Filter with regex:
 ```bash
-python -m ordnung.file_sorter ./mydir --regex '.*\.ya?ml$'
-python -m ordnung.file_sorter ./data --regex '.*_config\.json$'
+ordnung ./mydir --regex '.*\.ya?ml$'
+ordnung ./data --regex '.*_config\.json$'
 ```
 
 ### Command Line Options
@@ -88,25 +95,33 @@ python -m ordnung.file_sorter ./data --regex '.*_config\.json$'
 
 ```bash
 # Sort JSON file with 4-space indentation
-python -m ordnung.file_sorter data.json --json-indent 4
+ordnung data.json --json-indent 4
 
 # Sort YAML file and save to new file
-python -m ordnung.file_sorter config.yaml -o sorted_config.yaml
+ordnung config.yaml -o sorted_config.yaml
 
 # Sort and overwrite original file
-python -m ordnung.file_sorter settings.json
+ordnung settings.json
 
 # Process all JSON files in a directory recursively
-python -m ordnung.file_sorter ./configs --recursive
+ordnung ./configs --recursive
 
 # Use glob pattern to find files
-python -m ordnung.file_sorter './**/*.json' --pattern
+ordnung './**/*.json' --pattern
 
 # Filter files with regex
-python -m ordnung.file_sorter ./data --regex '.*_prod\.ya?ml$'
+ordnung ./data --regex '.*_prod\.ya?ml$'
 
 # Check mode (CI): verify formatting without rewriting
-python -m ordnung.file_sorter ./data --check
+ordnung ./data --check
+```
+
+### Alternative Usage (Module Execution)
+
+You can also run the tool as a Python module:
+```bash
+python -m ordnung.file_sorter data.json
+python -m ordnung.file_sorter ./mydir --recursive
 ```
 
 ## How It Works
