@@ -4,6 +4,14 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
+<!-- LOGO -->
+<br />
+<div align="center">
+  <a>
+    <img src="assets/logo.png" alt="Logo" width="200" height="200">
+  </a>
+</div>
+
 **Ordnung** is a Python utility for sorting YAML and JSON files alphabetically by keys. It supports batch processing, directory traversal, pattern matching, and is designed for both development and CI/CD workflows.
 
 ## ✨ Features
