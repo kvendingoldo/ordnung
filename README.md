@@ -8,7 +8,7 @@
 <br />
 <div align="center">
   <a>
-    <img src="assets/logo.png" alt="Logo" width="200" height="200">
+    <img src="assets/logo3.png" alt="Logo" width="250" height="250">
   </a>
 </div>
 
