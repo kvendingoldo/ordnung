@@ -16,7 +16,7 @@
 
 ## ✨ Features
 
-- **🔧 Automatic file type detection** - Supports `.json`, `.yaml`, and `.yml` files
+- **🔧 Automatic file type detection** - Supports `.json`, `.yaml`, and `.yml` files (including both single-document and multi-document YAML files with `---` separators)
 - **📁 Batch processing** - Process multiple files, directories, or use glob patterns
 - **🔄 Recursive sorting** - Sorts nested dictionaries, lists, and complex data structures
 - **🎯 Pattern matching** - Filter files with glob patterns and regex
@@ -58,10 +58,15 @@ ordnung file1.json file2.yaml file3.yml
 
 ### File Processing
 
+Ordnung supports both single-document YAML and multi-document YAML files (with `---` separators). Each document in a multi-document YAML file will be sorted individually, and document order can be preserved or sorted using the appropriate flag.
+
 ```bash
 # Sort single files
 ordnung config.json
 ordnung settings.yaml
+
+# Sort multi-document YAML (all docs in file will be sorted)
+ordnung multi-docs.yaml
 
 # Sort multiple files at once
 ordnung file1.json file2.yaml file3.yml
