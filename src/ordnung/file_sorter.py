@@ -277,14 +277,13 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
         if file_type == "json":
             formatted = json.dumps(
                 sorted_data, indent=json_indent, ensure_ascii=False, sort_keys=True)
-        else:
-            # For multi-doc YAML, use dump_all
-            if isinstance(sorted_data, list) and any(isinstance(doc, (dict, list, type(None))) for doc in sorted_data):
-                formatted = yaml.dump_all(sorted_data, default_flow_style=False,
-                                          allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
-            else:
-                formatted = yaml.dump(sorted_data, default_flow_style=False,
+        # For multi-doc YAML, use dump_all
+        elif isinstance(sorted_data, list) and any(isinstance(doc, (dict, list, type(None))) for doc in sorted_data):
+            formatted = yaml.dump_all(sorted_data, default_flow_style=False,
                                       allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
+        else:
+            formatted = yaml.dump(sorted_data, default_flow_style=False,
+                                  allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
         if original_content != formatted:
             logger.warning("File is not formatted: %s", input_file)
             diff = difflib.unified_diff(

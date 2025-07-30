@@ -604,10 +604,9 @@ class TestSortArraysByFirstKey:
         assert isinstance(mixed[1], str)   # Second item should still be string
 
 
+
 def test_multi_document_yaml_sorting(tmp_path):
     """Test that multi-document YAML is sorted per doc and order is preserved."""
-    import yaml
-    from ordnung.file_sorter import sort_file
 
     yaml_content = """b: 2
 a: 1
@@ -629,7 +628,7 @@ list:
     content = file_path.read_text()
     docs = list(yaml.safe_load_all(content))
     # Should have exactly three '---' (three docs, explicit_start=True)
-    assert content.count('---') == len(docs)
+    assert content.count("---") == len(docs)
     assert len(docs) == 3
     # Each doc should be sorted
     assert list(docs[0].keys()) == ["a", "b"]
@@ -641,8 +640,6 @@ list:
 
 def test_multi_document_yaml_empty_and_comments(tmp_path):
     """Test multi-doc YAML with empty docs and comments between docs."""
-    import yaml
-    from ordnung.file_sorter import sort_file
 
     yaml_content = """
 # First doc is empty
@@ -671,8 +668,6 @@ c: 3
 
 def test_multi_document_yaml_order_preserved(tmp_path):
     """Test that multi-doc YAML preserves doc order when sort_docs_by_first_key is False."""
-    import yaml
-    from ordnung.file_sorter import sort_file
 
     yaml_content = """
 z: 1
@@ -688,14 +683,11 @@ m: 3
     content = file_path.read_text()
     docs = list(yaml.safe_load_all(content))
     # Order should be [z, a, m]
-    assert [list(doc.keys())[0]
-            for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
+    assert [next(iter(doc.keys())) for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
 
 
 def test_multi_document_yaml_same_first_key(tmp_path):
     """Test that multi-doc YAML with same first key in each doc sorts by that value with sort-docs-by-first-key."""
-    import yaml
-    from ordnung.file_sorter import sort_file
 
     yaml_content = """
 age: 34
@@ -718,7 +710,7 @@ roles:
     sort_file(str(file_path), sort_docs_by_first_key=True)
     content = file_path.read_text()
     # Should preserve leading --- or direct doc start
-    assert content.lstrip().startswith('---') or content.lstrip().startswith('age:')
+    assert content.lstrip().startswith("---") or content.lstrip().startswith("age:")
     docs = list(yaml.safe_load_all(content))
     assert len(docs) == 2
     # After sorting, doc with age 29 comes first, then 34
@@ -728,8 +720,6 @@ roles:
 
 def test_multi_document_yaml_order_sorted(tmp_path):
     """Test that multi-doc YAML sorts doc order by first key when sort_docs_by_first_key is True."""
-    import yaml
-    from ordnung.file_sorter import sort_file
 
     yaml_content = """
 z: 1
@@ -745,5 +735,5 @@ m: 3
     content = file_path.read_text()
     docs = list(yaml.safe_load_all(content))
     # Order should be [z, a, m] (by value of first key: 1, 2, 3)
-    assert [list(doc.keys())[0] for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
-    assert [doc[list(doc.keys())[0]] for doc in docs if isinstance(doc, dict)] == [1, 2, 3]
+    assert [next(iter(doc.keys())) for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
+    assert [doc[next(iter(doc.keys()))] for doc in docs if isinstance(doc, dict)] == [1, 2, 3]
