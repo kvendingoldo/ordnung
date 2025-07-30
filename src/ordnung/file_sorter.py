@@ -199,7 +199,10 @@ def load_file(file_path: str, file_type: str) -> Any:
                 # Preprocess to quote unquoted port mappings, !something, and Norway-problem values
                 content = quote_port_and_specials(content)
                 # nosec
-                return yaml.load(content, Loader=NorwaySafeLoader)
+                docs = list(yaml.load_all(content, Loader=NorwaySafeLoader))
+                if len(docs) == 1:
+                    return docs[0]
+                return docs
     except Exception as err:
         raise FileLoadError(
             f"Error loading {file_type.upper()} file: {err}") from err
@@ -212,22 +215,60 @@ def save_file(data: Any, file_path: str, file_type: str, json_indent: int = 2, y
                 json.dump(data, f, indent=json_indent,
                           ensure_ascii=False, sort_keys=True)
             elif file_type == "yaml":
-                yaml.dump(data, f, default_flow_style=False,
-                          allow_unicode=True, sort_keys=True, indent=yaml_indent, Dumper=NorwaySafeDumper)
+                # Support multiple YAML documents
+                # Avoid writing a single YAML doc containing a list of docs
+                if isinstance(data, list) and (len(data) > 1 or (len(data) == 1 and not isinstance(data[0], list))):
+                    yaml.dump_all(data, f, default_flow_style=False,
+                                  allow_unicode=True, sort_keys=True, indent=yaml_indent, Dumper=NorwaySafeDumper, explicit_start=True)
+                else:
+                    yaml.dump(data, f, default_flow_style=False,
+                              allow_unicode=True, sort_keys=True, indent=yaml_indent, Dumper=NorwaySafeDumper)
     except Exception as err:
         raise FileSaveError(
             f"Error saving {file_type.upper()} file: {err}") from err
 
 
-def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent: int = 2, yaml_indent: int = 2, check: bool = False, sort_arrays_by_first_key: bool = False) -> bool:
+def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent: int = 2, yaml_indent: int = 2, check: bool = False, sort_arrays_by_first_key: bool = False, sort_docs_by_first_key: bool = False) -> bool:
+    """
+    Sort a JSON or YAML file. For YAML, can sort arrays by first key and (if multi-doc) sort docs by first key value.
+    Args:
+        input_file: Path to input file.
+        output_file: Path to output file (or None to overwrite input).
+        json_indent: Indentation for JSON output.
+        yaml_indent: Indentation for YAML output.
+        check: If True, only check formatting, don't write.
+        sort_arrays_by_first_key: If True, sort arrays of objects by their first key value.
+        sort_docs_by_first_key: If True and YAML multi-doc, sort docs by the value of their first key.
+    Returns:
+        True if file is already formatted (in check mode), else True if write succeeds.
+    """
     if not Path(input_file).exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
     file_type = detect_file_type(input_file)
     logger.info("Detected file type: %s", file_type.upper())
     data = load_file(input_file, file_type)
     logger.info("Loaded data from: %s", input_file)
-    sorted_data = sort_dict_recursively(
-        data, sort_arrays_by_first_key=sort_arrays_by_first_key)
+    # If YAML multi-doc: sort each doc separately
+    if file_type == "yaml" and isinstance(data, list) and any(isinstance(doc, (dict, list, type(None))) for doc in data):
+        sorted_docs = [sort_dict_recursively(
+            doc, sort_arrays_by_first_key=sort_arrays_by_first_key) for doc in data]
+        if sort_docs_by_first_key:
+            # Only sort docs that are dicts and have at least one key
+
+            def doc_sort_key(doc):
+                if isinstance(doc, dict) and doc:
+                    first_key = next(iter(doc.keys()))
+                    value = doc[first_key]
+                    # Sort by (type_name, string_value) for robust, user-explained order
+                    return (str(type(value)), str(value))
+                # None or non-dict docs sort last
+                return chr(0x10FFFF)
+            sorted_data = sorted(sorted_docs, key=doc_sort_key)
+        else:
+            sorted_data = sorted_docs
+    else:
+        sorted_data = sort_dict_recursively(
+            data, sort_arrays_by_first_key=sort_arrays_by_first_key)
     logger.info("Data sorted successfully")
     if check:
         # Check mode: compare sorted output to file content
@@ -236,6 +277,10 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
         if file_type == "json":
             formatted = json.dumps(
                 sorted_data, indent=json_indent, ensure_ascii=False, sort_keys=True)
+        # For multi-doc YAML, use dump_all
+        elif isinstance(sorted_data, list) and any(isinstance(doc, (dict, list, type(None))) for doc in sorted_data):
+            formatted = yaml.dump_all(sorted_data, default_flow_style=False,
+                                      allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
         else:
             formatted = yaml.dump(sorted_data, default_flow_style=False,
                                   allow_unicode=True, sort_keys=True, indent=yaml_indent).strip()
@@ -390,6 +435,10 @@ Examples:
         help="Sort arrays of objects by the value of the first key in each object",
     )
     parser.add_argument(
+        "--sort-docs-by-first-key", action="store_true",
+        help="Sort YAML documents (--- separated) by the value of their first key (default: preserve order)",
+    )
+    parser.add_argument(
         "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Set logging level (default: INFO)",
     )
@@ -422,6 +471,7 @@ Examples:
                 yaml_indent=args.yaml_indent,
                 check=False,
                 sort_arrays_by_first_key=args.sort_arrays_by_first_key,
+                sort_docs_by_first_key=args.sort_docs_by_first_key,
             )
         except Exception:
             logger.exception("Error processing file")
@@ -438,6 +488,7 @@ Examples:
                     yaml_indent=args.yaml_indent,
                     check=args.check,
                     sort_arrays_by_first_key=args.sort_arrays_by_first_key,
+                    sort_docs_by_first_key=args.sort_docs_by_first_key,
                 )
                 if args.check and not ok:
                     failed.append(str(f))

@@ -140,6 +140,7 @@ ordnung config.json --log-level ERROR
 | `--regex` | Filter files with regex | `--regex '.*\.json$'` |
 | `--check` | Check formatting without modifying | `--check` |
 | `--sort-arrays-by-first-key` | Sort arrays by first key value | `--sort-arrays-by-first-key` |
+| `--sort-docs-by-first-key` | For YAML files with multiple documents (--- separated), sort documents by the type and string value of the first key's value in each document, for robust and deterministic ordering. Documents with string values come before int, then float, then dict, then list, etc. For example: all docs whose first key is a string value are first, then int, then dict, then list. | `--sort-docs-by-first-key` |
 | `--log-level` | Set logging level | `--log-level DEBUG` |
 
 ## 📋 Examples

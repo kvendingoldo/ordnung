@@ -602,3 +602,138 @@ class TestSortArraysByFirstKey:
         assert len(mixed) == 5
         assert isinstance(mixed[0], dict)  # First item should still be dict
         assert isinstance(mixed[1], str)   # Second item should still be string
+
+
+
+def test_multi_document_yaml_sorting(tmp_path):
+    """Test that multi-document YAML is sorted per doc and order is preserved."""
+
+    yaml_content = """b: 2
+a: 1
+---
+z: 26
+m: 13
+---
+list:
+  - c
+  - a
+  - b
+"""
+    file_path = tmp_path / "multi.yaml"
+    file_path.write_text(yaml_content)
+
+    sort_file(str(file_path))
+
+    # Read back as text to check doc order
+    content = file_path.read_text()
+    docs = list(yaml.safe_load_all(content))
+    # Should have exactly three '---' (three docs, explicit_start=True)
+    assert content.count("---") == len(docs)
+    assert len(docs) == 3
+    # Each doc should be sorted
+    assert list(docs[0].keys()) == ["a", "b"]
+    assert list(docs[1].keys()) == ["m", "z"]
+    assert list(docs[2].keys()) == ["list"]
+    # The list in the last doc should be sorted
+    assert docs[2]["list"] == ["a", "b", "c"]
+
+
+def test_multi_document_yaml_empty_and_comments(tmp_path):
+    """Test multi-doc YAML with empty docs and comments between docs."""
+
+    yaml_content = """
+# First doc is empty
+---
+a: 2
+b: 1
+---
+# Only comment in this doc
+---
+c: 3
+"""
+    file_path = tmp_path / "multi_empty.yaml"
+    file_path.write_text(yaml_content)
+
+    sort_file(str(file_path))
+    content = file_path.read_text()
+    docs = list(yaml.safe_load_all(content))
+    # Should have 3 docs: [dict, None, dict]
+    assert len(docs) == 3
+    assert isinstance(docs[0], dict)
+    assert list(docs[0].keys()) == ["a", "b"]
+    assert docs[1] is None
+    assert isinstance(docs[2], dict)
+    assert list(docs[2].keys()) == ["c"]
+
+
+def test_multi_document_yaml_order_preserved(tmp_path):
+    """Test that multi-doc YAML preserves doc order when sort_docs_by_first_key is False."""
+
+    yaml_content = """
+z: 1
+---
+a: 2
+---
+m: 3
+"""
+    file_path = tmp_path / "multi_order.yaml"
+    file_path.write_text(yaml_content)
+
+    sort_file(str(file_path), sort_docs_by_first_key=False)
+    content = file_path.read_text()
+    docs = list(yaml.safe_load_all(content))
+    # Order should be [z, a, m]
+    assert [next(iter(doc.keys())) for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
+
+
+def test_multi_document_yaml_same_first_key(tmp_path):
+    """Test that multi-doc YAML with same first key in each doc sorts by that value with sort-docs-by-first-key."""
+
+    yaml_content = """
+age: 34
+email: alice.andersson@example.com
+name: Alice Andersson
+roles:
+- admin
+- editor
+---
+age: 29
+email: a.s@example.com
+name: A S
+roles:
+- admin
+- editor
+"""
+    file_path = tmp_path / "users.yaml"
+    file_path.write_text(yaml_content)
+
+    sort_file(str(file_path), sort_docs_by_first_key=True)
+    content = file_path.read_text()
+    # Should preserve leading --- or direct doc start
+    assert content.lstrip().startswith("---") or content.lstrip().startswith("age:")
+    docs = list(yaml.safe_load_all(content))
+    assert len(docs) == 2
+    # After sorting, doc with age 29 comes first, then 34
+    assert docs[0]["age"] == 29
+    assert docs[1]["age"] == 34
+
+
+def test_multi_document_yaml_order_sorted(tmp_path):
+    """Test that multi-doc YAML sorts doc order by first key when sort_docs_by_first_key is True."""
+
+    yaml_content = """
+z: 1
+---
+a: 2
+---
+m: 3
+"""
+    file_path = tmp_path / "multi_order.yaml"
+    file_path.write_text(yaml_content)
+
+    sort_file(str(file_path), sort_docs_by_first_key=True)
+    content = file_path.read_text()
+    docs = list(yaml.safe_load_all(content))
+    # Order should be [z, a, m] (by value of first key: 1, 2, 3)
+    assert [next(iter(doc.keys())) for doc in docs if isinstance(doc, dict)] == ["z", "a", "m"]
+    assert [doc[next(iter(doc.keys()))] for doc in docs if isinstance(doc, dict)] == [1, 2, 3]
