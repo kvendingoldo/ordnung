@@ -136,7 +136,7 @@ def test_should_exclude_file_literal_strings():
     file_path = Path("/path/to/test[file].json")
 
     # Invalid regex should be treated as literal string
-    assert _should_exclude_file(file_path, ["test[file]"]) == True
+    assert _should_exclude_file(file_path, ["test["]) == True
     assert _should_exclude_file(file_path, ["test[other]"]) == False
 
 
@@ -394,7 +394,8 @@ def test_main_with_exclude_pattern_excludes_test_txt(tmp_path, caplog):
 
     # Mock sys.argv to simulate command line with exclude pattern
     with patch('sys.argv', ['ordnung', str(tmp_path), '--exclude', '*.txt']):
-        main()
+        with caplog.at_level("INFO"):
+            main()
 
     # Should not exit with error since there are valid YAML/JSON files
     # Check that test.txt and backup.txt were excluded but config.json and settings.yaml were processed
@@ -497,7 +498,7 @@ def test_validate_data_preservation_type_mismatch():
 
     errors = validate_data_preservation(original, sorted_data)
     assert len(errors) == 1
-    assert "Value mismatch" in errors[0]
+    assert "Type mismatch" in errors[0]
 
 
 def test_validate_data_preservation_array_length_mismatch():
@@ -586,7 +587,8 @@ def test_main_with_validate_option(tmp_path, caplog):
 
     # Mock sys.argv to simulate command line with validate option
     with patch('sys.argv', ['ordnung', str(test_file), '--validate']):
-        main()
+        with caplog.at_level("INFO"):
+            main()
 
     # Check that validation was performed
     assert "Validating data preservation" in caplog.text
