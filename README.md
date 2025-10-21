@@ -20,7 +20,9 @@
 - **📁 Batch processing** - Process multiple files, directories, or use glob patterns
 - **🔄 Recursive sorting** - Sorts nested dictionaries, lists, and complex data structures
 - **🎯 Pattern matching** - Filter files with glob patterns and regex
+- **🚫 File exclusion** - Exclude files matching patterns (supports glob and regex)
 - **✅ Check mode** - Verify formatting without rewriting files (CI-friendly)
+- **🔍 Data validation** - Validate that all data structures are preserved after sorting
 - **📏 Custom indentation** - Configurable indentation for both JSON and YAML
 - **🔢 Array sorting** - Optionally sort arrays of objects by first key value
 - **🌍 Unicode support** - Full support for international characters
@@ -101,6 +103,20 @@ ordnung ./configs --regex '.*_config\.ya?ml$'
 ordnung ./data --recursive --regex '.*\.json$'
 ```
 
+### File Exclusion
+
+```bash
+# Exclude files matching patterns
+ordnung ./data --exclude '*.tmp' --exclude 'backup_*'
+ordnung ./configs --exclude '.*\.bak$' --recursive
+
+# Exclude with multiple patterns
+ordnung ./data --exclude '*.tmp' --exclude '*.bak' --exclude 'backup_*'
+
+# Combine exclusion with other filters
+ordnung ./data --exclude '*.tmp' --regex '.*\.json$' --recursive
+```
+
 ### CI/CD Integration
 
 ```bash
@@ -109,6 +125,20 @@ ordnung ./data --check
 
 # Use in CI pipeline (exits with error if files need formatting)
 ordnung ./configs --recursive --check
+```
+
+### Data Validation
+
+```bash
+# Validate data preservation during sorting
+ordnung config.json --validate
+ordnung ./data --validate --recursive
+
+# Combine validation with other options
+ordnung ./configs --validate --exclude '*.tmp' --recursive
+
+# Use validation in CI/CD pipelines
+ordnung ./data --validate --check --recursive
 ```
 
 ### Custom Formatting
@@ -143,6 +173,8 @@ ordnung config.json --log-level ERROR
 | `--recursive` | Recursively search directories | `--recursive` |
 | `--pattern` | Treat inputs as glob patterns | `--pattern` |
 | `--regex` | Filter files with regex | `--regex '.*\.json$'` |
+| `--exclude` | Exclude files matching pattern (can be used multiple times) | `--exclude '*.tmp'` |
+| `--validate` | Validate that all data structures are preserved after sorting | `--validate` |
 | `--check` | Check formatting without modifying | `--check` |
 | `--sort-arrays-by-first-key` | Sort arrays by first key value | `--sort-arrays-by-first-key` |
 | `--sort-docs-by-first-key` | For YAML files with multiple documents (--- separated), sort documents by the type and string value of the first key's value in each document, for robust and deterministic ordering. Documents with string values come before int, then float, then dict, then list, etc. For example: all docs whose first key is a string value are first, then int, then dict, then list. | `--sort-docs-by-first-key` |
@@ -198,6 +230,36 @@ ordnung config.json --log-level ERROR
     {"name": "Charlie", "id": 3}
   ]
 }
+```
+
+### Data Validation
+
+The `--validate` option ensures that all data structures, keys, and values are preserved during sorting. This is particularly useful for critical configuration files where data integrity is paramount.
+
+**What gets validated:**
+- ✅ All dictionary keys are preserved
+- ✅ All array elements are preserved (order may change)
+- ✅ All nested structures are intact
+- ✅ Data types remain consistent
+- ✅ Values are unchanged
+
+**Example validation output:**
+```bash
+$ ordnung config.json --validate
+INFO: Detected file type: JSON
+INFO: Loaded data from: config.json
+INFO: Data sorted successfully
+INFO: Validating data preservation...
+INFO: Data validation passed - all structures preserved
+```
+
+**If validation fails:**
+```bash
+$ ordnung config.json --validate
+ERROR: Data validation failed! The following issues were found:
+ERROR:   Missing keys at root: ['important_key']
+ERROR:   Value mismatch at settings.debug: true vs false
+ERROR: Data validation failed - data structures were not preserved during sorting
 ```
 
 ## 🧪 Testing
