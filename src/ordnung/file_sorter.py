@@ -143,6 +143,97 @@ def detect_file_type(file_path: str) -> str:
             f"Cannot determine file type for {file_path}") from err
 
 
+def validate_data_preservation(original: Any, sorted_data: Any, path: str = "root") -> List[str]:
+    """
+    Validate that all data structures, keys, and values are preserved after sorting.
+
+    Args:
+        original: The original data structure
+        sorted_data: The sorted data structure
+        path: Current path in the data structure (for error reporting)
+
+    Returns:
+        List of validation errors (empty if validation passes)
+    """
+    errors = []
+
+    # Check if types match
+    if type(original) != type(sorted_data):
+        errors.append(
+            f"Type mismatch at {path}: {type(original).__name__} vs {type(sorted_data).__name__}")
+        return errors
+
+    if isinstance(original, dict):
+        # Check that all keys are preserved
+        original_keys = set(original.keys())
+        sorted_keys = set(sorted_data.keys())
+
+        missing_keys = original_keys - sorted_keys
+        extra_keys = sorted_keys - original_keys
+
+        if missing_keys:
+            errors.append(f"Missing keys at {path}: {sorted(missing_keys)}")
+        if extra_keys:
+            errors.append(f"Extra keys at {path}: {sorted(extra_keys)}")
+
+        # Recursively validate values for common keys
+        common_keys = original_keys & sorted_keys
+        for key in common_keys:
+            key_path = f"{path}.{key}" if path != "root" else key
+            errors.extend(validate_data_preservation(
+                original[key], sorted_data[key], key_path))
+
+    elif isinstance(original, list):
+        # Check that all elements are preserved (order may differ)
+        if len(original) != len(sorted_data):
+            errors.append(
+                f"Length mismatch at {path}: {len(original)} vs {len(sorted_data)}")
+            return errors
+
+        # For lists, we need to check that all elements exist (order may be different)
+        # Convert to sets for comparison, but handle unhashable types
+        try:
+            original_set = set(original)
+            sorted_set = set(sorted_data)
+
+            missing_elements = original_set - sorted_set
+            extra_elements = sorted_set - original_set
+
+            if missing_elements:
+                errors.append(
+                    f"Missing elements at {path}: {sorted(missing_elements)}")
+            if extra_elements:
+                errors.append(
+                    f"Extra elements at {path}: {sorted(extra_elements)}")
+        except TypeError:
+            # Handle unhashable types by comparing element by element
+            # This is less efficient but handles complex nested structures
+            original_copy = original.copy()
+            sorted_copy = sorted_data.copy()
+
+            for i, orig_elem in enumerate(original_copy):
+                found_match = False
+                for j, sorted_elem in enumerate(sorted_copy):
+                    elem_errors = validate_data_preservation(
+                        orig_elem, sorted_elem, f"{path}[{i}]")
+                    if not elem_errors:
+                        sorted_copy.pop(j)
+                        found_match = True
+                        break
+
+                if not found_match:
+                    errors.append(
+                        f"Element at {path}[{i}] not found in sorted data: {orig_elem}")
+
+    else:
+        # For primitive types, check exact equality
+        if original != sorted_data:
+            errors.append(
+                f"Value mismatch at {path}: {original} vs {sorted_data}")
+
+    return errors
+
+
 def sort_dict_recursively(data: Any, *, sort_arrays_by_first_key: bool = False) -> Any:
     if isinstance(data, dict):
         return {k: sort_dict_recursively(v, sort_arrays_by_first_key=sort_arrays_by_first_key) for k, v in sorted(data.items(), key=lambda x: str(x[0]))}
@@ -228,7 +319,7 @@ def save_file(data: Any, file_path: str, file_type: str, json_indent: int = 2, y
             f"Error saving {file_type.upper()} file: {err}") from err
 
 
-def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent: int = 2, yaml_indent: int = 2, check: bool = False, sort_arrays_by_first_key: bool = False, sort_docs_by_first_key: bool = False) -> bool:
+def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent: int = 2, yaml_indent: int = 2, check: bool = False, sort_arrays_by_first_key: bool = False, sort_docs_by_first_key: bool = False, validate: bool = False) -> bool:
     """
     Sort a JSON or YAML file. For YAML, can sort arrays by first key and (if multi-doc) sort docs by first key value.
     Args:
@@ -239,6 +330,7 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
         check: If True, only check formatting, don't write.
         sort_arrays_by_first_key: If True, sort arrays of objects by their first key value.
         sort_docs_by_first_key: If True and YAML multi-doc, sort docs by the value of their first key.
+        validate: If True, validate that all data structures are preserved after sorting.
     Returns:
         True if file is already formatted (in check mode), else True if write succeeds.
     """
@@ -270,6 +362,21 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
         sorted_data = sort_dict_recursively(
             data, sort_arrays_by_first_key=sort_arrays_by_first_key)
     logger.info("Data sorted successfully")
+
+    # Validate data preservation if requested
+    if validate:
+        logger.info("Validating data preservation...")
+        validation_errors = validate_data_preservation(data, sorted_data)
+        if validation_errors:
+            logger.error(
+                "Data validation failed! The following issues were found:")
+            for error in validation_errors:
+                logger.error("  %s", error)
+            raise FileSorterError(
+                "Data validation failed - data structures were not preserved during sorting")
+        else:
+            logger.info("Data validation passed - all structures preserved")
+
     if check:
         # Check mode: compare sorted output to file content
         with Path(input_file).open(encoding="utf-8") as f:
@@ -308,11 +415,44 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
     return True
 
 
+def _should_exclude_file(file_path: Path, exclude_patterns: Optional[List[str]]) -> bool:
+    """
+    Check if a file should be excluded based on the exclude patterns.
+    Supports both glob patterns and regex patterns.
+    """
+    if not exclude_patterns:
+        return False
+
+    file_str = str(file_path)
+    file_name = file_path.name
+
+    for pattern in exclude_patterns:
+        # Try glob pattern matching first
+        try:
+            if file_path.match(pattern):
+                return True
+        except (ValueError, TypeError):
+            # If glob matching fails, try regex
+            pass
+
+        # Try regex pattern matching
+        try:
+            if re.search(pattern, file_str) or re.search(pattern, file_name):
+                return True
+        except re.error:
+            # If regex is invalid, treat as literal string match
+            if pattern in file_str or pattern in file_name:
+                return True
+
+    return False
+
+
 def find_files(
     paths: List[str],
     *, recursive: bool = False,
     regex: Optional[str] = None,
     pattern_mode: bool = False,
+    exclude_patterns: Optional[List[str]] = None,
 ) -> List[Path]:
     """
     Given a list of files, directories, or patterns, return all matching YAML/JSON files.
@@ -331,19 +471,21 @@ def find_files(
                     match_path.is_file()
                     and match_path.suffix.lower() in {".json", ".yaml", ".yml"}
                     and (not regex_compiled or regex_compiled.search(str(match_path)))
+                    and not _should_exclude_file(match_path, exclude_patterns)
                 ):
                     found.add(match_path.resolve())
         elif path.is_file():
             if (
                 path.suffix.lower() in {".json", ".yaml", ".yml"}
                 and (not regex_compiled or regex_compiled.search(str(path)))
+                and not _should_exclude_file(path, exclude_patterns)
             ):
                 found.add(path.resolve())
         elif path.is_dir():
             for ext in ("*.json", "*.yaml", "*.yml"):
                 files = path.rglob(ext) if recursive else path.glob(ext)
                 for f in files:
-                    if f.is_file() and (not regex_compiled or regex_compiled.search(str(f))):
+                    if f.is_file() and (not regex_compiled or regex_compiled.search(str(f))) and not _should_exclude_file(f, exclude_patterns):
                         found.add(f.resolve())
         else:
             parent = path.parent if path.parent != Path() else Path()
@@ -355,6 +497,7 @@ def find_files(
                     match_path.is_file()
                     and match_path.suffix.lower() in {".json", ".yaml", ".yml"}
                     and (not regex_compiled or regex_compiled.search(str(match_path)))
+                    and not _should_exclude_file(match_path, exclude_patterns)
                 ):
                     found.add(match_path.resolve())
     return sorted(found)
@@ -383,6 +526,14 @@ Examples:
   # Filter files with regex
   ordnung ./mydir --regex '.*\\.ya?ml$'
   ordnung ./data --regex '.*_prod\\.json$'
+
+  # Exclude files matching patterns
+  ordnung ./data --exclude '*.tmp' --exclude 'backup_*'
+  ordnung ./configs --exclude '.*\\.bak$' --recursive
+
+  # Validate data preservation
+  ordnung config.json --validate
+  ordnung ./data --validate --recursive
 
   # Check mode (CI): verify formatting without rewriting
   ordnung ./data --check
@@ -439,6 +590,14 @@ Examples:
         help="Sort YAML documents (--- separated) by the value of their first key (default: preserve order)",
     )
     parser.add_argument(
+        "--exclude", action="append", metavar="PATTERN",
+        help="Exclude files matching pattern (can be used multiple times). Supports glob patterns and regex.",
+    )
+    parser.add_argument(
+        "--validate", action="store_true",
+        help="Validate that all data structures, keys, and values are preserved after sorting (useful for ensuring no data loss)",
+    )
+    parser.add_argument(
         "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Set logging level (default: INFO)",
     )
@@ -454,6 +613,7 @@ Examples:
         recursive=args.recursive,
         regex=args.regex,
         pattern_mode=args.pattern,
+        exclude_patterns=args.exclude,
     )
 
     if not files:
@@ -472,6 +632,7 @@ Examples:
                 check=False,
                 sort_arrays_by_first_key=args.sort_arrays_by_first_key,
                 sort_docs_by_first_key=args.sort_docs_by_first_key,
+                validate=args.validate,
             )
         except Exception:
             logger.exception("Error processing file")
@@ -489,6 +650,7 @@ Examples:
                     check=args.check,
                     sort_arrays_by_first_key=args.sort_arrays_by_first_key,
                     sort_docs_by_first_key=args.sort_docs_by_first_key,
+                    validate=args.validate,
                 )
                 if args.check and not ok:
                     failed.append(str(f))
