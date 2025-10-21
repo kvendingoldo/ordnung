@@ -158,7 +158,7 @@ def validate_data_preservation(original: Any, sorted_data: Any, path: str = "roo
     errors = []
 
     # Check if types match
-    if type(original) != type(sorted_data):
+    if type(original) is not type(sorted_data):
         errors.append(
             f"Type mismatch at {path}: {type(original).__name__} vs {type(sorted_data).__name__}")
         return errors
@@ -225,11 +225,10 @@ def validate_data_preservation(original: Any, sorted_data: Any, path: str = "roo
                     errors.append(
                         f"Element at {path}[{i}] not found in sorted data: {orig_elem}")
 
-    else:
-        # For primitive types, check exact equality
-        if original != sorted_data:
-            errors.append(
-                f"Value mismatch at {path}: {original} vs {sorted_data}")
+    # For primitive types, check exact equality
+    elif original != sorted_data:
+        errors.append(
+            f"Value mismatch at {path}: {original} vs {sorted_data}")
 
     return errors
 
@@ -374,8 +373,7 @@ def sort_file(input_file: str, output_file: Optional[str] = None, *, json_indent
                 logger.error("  %s", error)
             raise FileSorterError(
                 "Data validation failed - data structures were not preserved during sorting")
-        else:
-            logger.info("Data validation passed - all structures preserved")
+        logger.info("Data validation passed - all structures preserved")
 
     if check:
         # Check mode: compare sorted output to file content

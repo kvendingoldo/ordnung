@@ -15,12 +15,11 @@ import pytest
 
 from ordnung.file_sorter import (
     FileLoadError,
-    FileSorterError,
-    sort_file,
-    find_files,
     _should_exclude_file,
-    validate_data_preservation,
+    find_files,
     main,
+    sort_file,
+    validate_data_preservation,
 )
 
 from .conftest import compare_json_files, compare_yaml_files
@@ -106,14 +105,14 @@ def test_should_exclude_file_glob_patterns():
     file_path = Path("/path/to/test.json")
 
     # Test glob patterns
-    assert _should_exclude_file(file_path, ["*.json"]) == True
-    assert _should_exclude_file(file_path, ["*.yaml"]) == False
-    assert _should_exclude_file(file_path, ["test.*"]) == True
-    assert _should_exclude_file(file_path, ["*.tmp"]) == False
+    assert _should_exclude_file(file_path, ["*.json"])
+    assert not _should_exclude_file(file_path, ["*.yaml"])
+    assert _should_exclude_file(file_path, ["test.*"])
+    assert not _should_exclude_file(file_path, ["*.tmp"])
 
     # Test multiple patterns
-    assert _should_exclude_file(file_path, ["*.yaml", "*.json"]) == True
-    assert _should_exclude_file(file_path, ["*.tmp", "*.bak"]) == False
+    assert _should_exclude_file(file_path, ["*.yaml", "*.json"])
+    assert not _should_exclude_file(file_path, ["*.tmp", "*.bak"])
 
 
 def test_should_exclude_file_regex_patterns():
@@ -121,14 +120,14 @@ def test_should_exclude_file_regex_patterns():
     file_path = Path("/path/to/test_file.json")
 
     # Test regex patterns
-    assert _should_exclude_file(file_path, [r".*\.json$"]) == True
-    assert _should_exclude_file(file_path, [r".*\.yaml$"]) == False
-    assert _should_exclude_file(file_path, [r".*test.*"]) == True
-    assert _should_exclude_file(file_path, [r".*backup.*"]) == False
+    assert _should_exclude_file(file_path, [r".*\.json$"])
+    assert not _should_exclude_file(file_path, [r".*\.yaml$"])
+    assert _should_exclude_file(file_path, [r".*test.*"])
+    assert not _should_exclude_file(file_path, [r".*backup.*"])
 
     # Test filename-only matching
     file_path2 = Path("/path/to/backup.json")
-    assert _should_exclude_file(file_path2, [r"backup"]) == True
+    assert _should_exclude_file(file_path2, [r"backup"])
 
 
 def test_should_exclude_file_literal_strings():
@@ -136,15 +135,15 @@ def test_should_exclude_file_literal_strings():
     file_path = Path("/path/to/test[file].json")
 
     # Invalid regex should be treated as literal string
-    assert _should_exclude_file(file_path, ["test["]) == True
-    assert _should_exclude_file(file_path, ["test[other]"]) == False
+    assert _should_exclude_file(file_path, ["test["])
+    assert not _should_exclude_file(file_path, ["test[other]"])
 
 
 def test_should_exclude_file_no_patterns():
     """Test _should_exclude_file with no exclude patterns."""
     file_path = Path("/path/to/test.json")
-    assert _should_exclude_file(file_path, None) == False
-    assert _should_exclude_file(file_path, []) == False
+    assert not _should_exclude_file(file_path, None)
+    assert not _should_exclude_file(file_path, [])
 
 
 def test_find_files_with_exclude_patterns(tmp_path):
@@ -156,7 +155,7 @@ def test_find_files_with_exclude_patterns(tmp_path):
         "config.tmp",
         "backup.json",
         "settings.yaml",
-        "temp.json"
+        "temp.json",
     ]
 
     for filename in test_files:
@@ -192,7 +191,7 @@ def test_find_files_with_exclude_regex(tmp_path):
         "prod_config.json",
         "dev_config.json",
         "test_config.yaml",
-        "prod_settings.yaml"
+        "prod_settings.yaml",
     ]
 
     for filename in test_files:
@@ -218,7 +217,7 @@ def test_find_files_exclude_with_recursive(tmp_path):
         ("config.json", '{"test": "data"}'),
         ("subdir/config.json", '{"test": "data"}'),
         ("subdir/backup.json", '{"test": "data"}'),
-        ("subdir/temp.yaml", 'test: data')
+        ("subdir/temp.yaml", "test: data"),
     ]
 
     for file_path, content in files_to_create:
@@ -242,7 +241,7 @@ def test_find_files_exclude_with_pattern_mode(tmp_path):
         "data.json",
         "data.yaml",
         "backup_data.json",
-        "temp_data.yaml"
+        "temp_data.yaml",
     ]
 
     for filename in test_files:
@@ -265,7 +264,7 @@ def test_find_files_exclude_with_regex_filter(tmp_path):
         "prod_config.yaml",
         "dev_config.json",
         "dev_config.yaml",
-        "test_config.json"
+        "test_config.json",
     ]
 
     for filename in test_files:
@@ -287,10 +286,10 @@ def test_find_files_excludes_non_yaml_json_files(tmp_path):
     # Create test files including non-YAML/JSON files
     test_files = [
         ("config.json", '{"test": "data"}'),
-        ("settings.yaml", 'test: data'),
-        ("test.txt", 'This is a text file'),
-        ("README.md", '# Documentation'),
-        ("script.py", 'print("hello")')
+        ("settings.yaml", "test: data"),
+        ("test.txt", "This is a text file"),
+        ("README.md", "# Documentation"),
+        ("script.py", 'print("hello")'),
     ]
 
     for filename, content in test_files:
@@ -316,10 +315,10 @@ def test_find_files_with_exclude_patterns_for_non_yaml_json(tmp_path):
     # Create test files including non-YAML/JSON files
     test_files = [
         ("config.json", '{"test": "data"}'),
-        ("settings.yaml", 'test: data'),
-        ("test.txt", 'This is a text file'),
-        ("backup.txt", 'Backup file'),
-        ("temp.json", '{"temp": "data"}')
+        ("settings.yaml", "test: data"),
+        ("test.txt", "This is a text file"),
+        ("backup.txt", "Backup file"),
+        ("temp.json", '{"temp": "data"}'),
     ]
 
     for filename, content in test_files:
@@ -342,9 +341,9 @@ def test_find_files_excludes_all_files_with_exclude_pattern(tmp_path):
     """Test that when exclude patterns exclude all files, find_files returns empty list."""
     # Create only non-YAML/JSON files
     test_files = [
-        ("test.txt", 'This is a text file'),
-        ("README.md", '# Documentation'),
-        ("script.py", 'print("hello")')
+        ("test.txt", "This is a text file"),
+        ("README.md", "# Documentation"),
+        ("script.py", 'print("hello")'),
     ]
 
     for filename, content in test_files:
@@ -367,9 +366,8 @@ def test_main_excludes_test_txt_file_and_shows_warning(tmp_path, caplog):
     test_file.write_text("This is a test text file")
 
     # Mock sys.argv to simulate command line arguments
-    with patch('sys.argv', ['ordnung', str(test_file)]):
-        with pytest.raises(SystemExit) as exc_info:
-            main()
+    with patch("sys.argv", ["ordnung", str(test_file)]), pytest.raises(SystemExit) as exc_info:
+        main()
 
     # Should exit with code 1 (no matching files found)
     assert exc_info.value.code == 1
@@ -383,9 +381,9 @@ def test_main_with_exclude_pattern_excludes_test_txt(tmp_path, caplog):
     # Create mixed files including test.txt
     files_to_create = [
         ("config.json", '{"test": "data"}'),
-        ("settings.yaml", 'test: data'),
-        ("test.txt", 'This is a test text file'),
-        ("backup.txt", 'Backup file')
+        ("settings.yaml", "test: data"),
+        ("test.txt", "This is a test text file"),
+        ("backup.txt", "Backup file"),
     ]
 
     for filename, content in files_to_create:
@@ -393,9 +391,8 @@ def test_main_with_exclude_pattern_excludes_test_txt(tmp_path, caplog):
         file_path.write_text(content)
 
     # Mock sys.argv to simulate command line with exclude pattern
-    with patch('sys.argv', ['ordnung', str(tmp_path), '--exclude', '*.txt']):
-        with caplog.at_level("INFO"):
-            main()
+    with patch("sys.argv", ["ordnung", str(tmp_path), "--exclude", "*.txt"]), caplog.at_level("INFO"):
+        main()
 
     # Should not exit with error since there are valid YAML/JSON files
     # Check that test.txt and backup.txt were excluded but config.json and settings.yaml were processed
@@ -418,16 +415,16 @@ def test_validate_data_preservation_nested_dict():
     original = {
         "outer": {
             "inner_b": 2,
-            "inner_a": 1
+            "inner_a": 1,
         },
-        "simple": "value"
+        "simple": "value",
     }
     sorted_data = {
         "outer": {
             "inner_a": 1,
-            "inner_b": 2
+            "inner_b": 2,
         },
-        "simple": "value"
+        "simple": "value",
     }
 
     errors = validate_data_preservation(original, sorted_data)
@@ -447,11 +444,11 @@ def test_validate_data_preservation_array_of_objects():
     """Test validation with arrays of objects."""
     original = [
         {"name": "bob", "age": 30},
-        {"name": "alice", "age": 25}
+        {"name": "alice", "age": 25},
     ]
     sorted_data = [
         {"name": "alice", "age": 25},
-        {"name": "bob", "age": 30}
+        {"name": "bob", "age": 30},
     ]
 
     errors = validate_data_preservation(original, sorted_data)
@@ -527,23 +524,23 @@ def test_validate_data_preservation_complex_nested():
     original = {
         "users": [
             {"name": "alice", "settings": {"theme": "dark", "lang": "en"}},
-            {"name": "bob", "settings": {"theme": "light", "lang": "fr"}}
+            {"name": "bob", "settings": {"theme": "light", "lang": "fr"}},
         ],
         "config": {
             "debug": True,
-            "version": "1.0"
-        }
+            "version": "1.0",
+        },
     }
 
     sorted_data = {
         "config": {
             "debug": True,
-            "version": "1.0"
+            "version": "1.0",
         },
         "users": [
             {"name": "bob", "settings": {"lang": "fr", "theme": "light"}},
-            {"name": "alice", "settings": {"lang": "en", "theme": "dark"}}
-        ]
+            {"name": "alice", "settings": {"lang": "en", "theme": "dark"}},
+        ],
     }
 
     errors = validate_data_preservation(original, sorted_data)
@@ -586,9 +583,8 @@ def test_main_with_validate_option(tmp_path, caplog):
     test_file.write_text('{"b": 2, "a": 1, "c": 3}')
 
     # Mock sys.argv to simulate command line with validate option
-    with patch('sys.argv', ['ordnung', str(test_file), '--validate']):
-        with caplog.at_level("INFO"):
-            main()
+    with patch("sys.argv", ["ordnung", str(test_file), "--validate"]), caplog.at_level("INFO"):
+        main()
 
     # Check that validation was performed
     assert "Validating data preservation" in caplog.text
@@ -599,12 +595,12 @@ def test_validate_data_preservation_yaml_multidoc():
     """Test validation with YAML multi-document structures."""
     original = [
         {"name": "doc1", "value": 1},
-        {"name": "doc2", "value": 2}
+        {"name": "doc2", "value": 2},
     ]
 
     sorted_data = [
         {"name": "doc2", "value": 2},
-        {"name": "doc1", "value": 1}
+        {"name": "doc1", "value": 1},
     ]
 
     errors = validate_data_preservation(original, sorted_data)
