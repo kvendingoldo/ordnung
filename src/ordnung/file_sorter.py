@@ -637,6 +637,7 @@ Examples:
             sys.exit(1)
     else:
         # Multiple files or check mode
+        errored = []
         for f in files:
             try:
                 logger.info("\nProcessing: %s", f)
@@ -654,6 +655,7 @@ Examples:
                     failed.append(str(f))
             except Exception:
                 logger.exception("Error processing %s", f)
+                errored.append(str(f))
                 if args.check:
                     failed.append(str(f))
 
@@ -666,6 +668,12 @@ Examples:
                 sys.exit(1)
             else:
                 logger.info("All files are properly formatted.")
+        elif errored:
+            logger.error(
+                "\n%d file(s) failed to process:", len(errored))
+            for f in errored:
+                logger.error("  %s", f)
+            sys.exit(1)
         else:
             logger.info("\nSuccessfully processed %d file(s).", len(files))
 
